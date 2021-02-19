@@ -1,7 +1,7 @@
 ## Sample R script 
 ## Using the pooled OLS estimator to estimate the Cigarette demand example from the Baltagi textbook
 
-#version 1.2
+#version 1.4
 
 ####################################################################
 ###              Set-up for use                                  ###
