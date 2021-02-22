@@ -25,9 +25,12 @@ output = getwd()
 
 ## Install required packages (code is only executed if the packages are not yet installed)
 if(!require(plm)){install.packages("plm")} ## panel data package
+#install.packages("expm")
+
 
 ## Load required packages
-library(plm)  
+library(plm) 
+#library(expm)
 
 ## Load your own functions
 source("OwnFunctions.R")
@@ -67,60 +70,12 @@ x_D<-as.matrix(cbind(Cnst=1,lnC_itL1_D,lnP_it_D,lnPn_it_D,lnY_it_D))
 ###                Run OLS on static model                       ###
 ####################################################################
 
-OLS_static = OLS_own(y_S,x_S)
-
-#let's check the coefficients
-OLS_static[,1]
-#let's check the p-values
-OLS_static[,4]
-#they are all significant !
+#My OLS function returns 2 things in a list
 
 
-######## Let's expand the code to obtain a EGLS estimator #########
 
-####### I am writing the what would happen in the function here 
-#### This makes it easier to code!
-
-#For EGLS, we assume that Var(miu_{i,t}) is sigma_i^2
-
-x <- x_S
-y <- y_S
-
-n  <- length(y)
-k  <- ncol(x)
-df <- n-k
-
-## Run OLS
-xy     <- t(x)%*%y
-xxi    <- solve(t(x)%*%x)
-coefs  <- as.vector(xxi%*%xy)
-
-yhat   <- as.vector(x%*%coefs)
-res    <- y-yhat
-
-#initialise vector of sigma_square_i
-sigma_i <- seq(1:30)
-
-#let's compute the sigma_i 
-for (i in 1:(length(res)/30)){
-  sigma_i[i] <- log(t(res[(1+(i-1)*30):(i*30)])%*%(res[(1+(i-1)*30):(i*30)]))
-}
-#remember we assume that ln(sigma_i) = B_0 + B_1 ln(x_t) + 
-
-
-x <- x_S #here some kind of X_i
-y <- res #sigma_i
-
-n  <- length(y)
-k  <- ncol(x)
-df <- n-k
-
-## Run OLS
-xy     <- t(x)%*%y #indeed I need some kind of X_i
-xxi    <- solve(t(x)%*%x)
-coefs  <- as.vector(xxi%*%xy)
-
-sigma_hat  <- as.vector(x%*%coefs) #this is the sigma_hat entering B_GLS
+OLS_static = OLS_own(y_S,x_S,3)
+OLS_static
 
 
 ####################################################################
