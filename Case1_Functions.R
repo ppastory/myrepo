@@ -21,7 +21,6 @@ OLS_own = function (y,x,w)
   res    <- y-yhat
   sigma2 <- as.vector(t(res)%*%res/df)
   
-  print (w)
   #case where we only want to do 
   
   if (w == 0){
