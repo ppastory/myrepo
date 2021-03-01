@@ -74,8 +74,49 @@ x_D<-as.matrix(cbind(Cnst=1,lnC_itL1_D,lnP_it_D,lnPn_it_D,lnY_it_D))
 
 
 
-OLS_static = OLS_own(y_S,x_S,3)
+OLS_static = OLS_own(y_S,x_S,0)
 OLS_static
+
+####################################################################
+###                Run GLS on static model                       ###
+####################################################################
+
+
+
+
+
+####################################################################
+###                Run EGLS on static model                       ###
+####################################################################
+
+#OLS_static = OLS_own(y_S,x_S,0)
+#res <- OLS_static$res
+#k <- OLS_static$k
+
+#We have 30 error terms per states
+t <- 30
+
+#There is one different sigma per state (46 states)
+sigma_i <- seq(1:46)
+
+
+#let's compute the sigma_i 
+for (i in 1:(length(res)/t)){
+  sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
+}
+#Maybe K is 46 but not sure
+
+#Now we create the diagonal of sigma_hat
+
+sigma_est<-rep(sigma_i,each=t)
+
+#now we create the matrix and put sigma_hat as the diagonal of that matrix
+
+sigma_hat <- matrix(0,length(res), length(res)) 
+#I put back the diagonal element in the diagnonals
+diag(sigma_hat) <- sigma_est
+
+sigma_hat
 
 
 ####################################################################
