@@ -33,7 +33,7 @@ library(plm)
 #library(expm)
 
 ## Load your own functions
-source("OwnFunctions.R")
+source("Case1_Functions.R")
 
 
 ####################################################################
