@@ -72,26 +72,40 @@ x_D<-as.matrix(cbind(Cnst=1,lnC_itL1_D,lnP_it_D,lnPn_it_D,lnY_it_D))
 
 #My OLS function returns 2 things in a list
 
-
-
 OLS_static = OLS_own(y_S,x_S,0)
-OLS_static
+OLS_static$residuals
 
 ####################################################################
 ###                Run GLS on static model                       ###
 ####################################################################
 
+res <- OLS_static$residuals
+
+### I compute Omega outside of the funciton
+res2       <- res%*%t(res)
+#the non-diagnonal elemets of res2 need to have 0
+#I take away the diagonals
+diagonal <- diag(res2) 
+#I create a matrix of 0 of diam
+res2 <- matrix(0,nrow(res2), ncol(res2)) 
+#I put back the diagonal element in the diagnonals
+#but this time I take the inverse to get P
+diag(res2) <- 1/sqrt(diagonal)
+#res2 is sigma2 omega in the formulas
+P <- res2
+
+omega_1    <- t(P)%*%P
 
 
+GLS_static = GLS_own (y_S,x_S,omega_1)
 
 
 ####################################################################
 ###                Run EGLS on static model                       ###
 ####################################################################
 
-#OLS_static = OLS_own(y_S,x_S,0)
-#res <- OLS_static$res
-#k <- OLS_static$k
+res <- OLS_static$residuals
+k <- OLS_static$param
 
 #We have 30 error terms per states
 t <- 30
@@ -112,11 +126,14 @@ sigma_est<-rep(sigma_i,each=t)
 
 #now we create the matrix and put sigma_hat as the diagonal of that matrix
 
-sigma_hat <- matrix(0,length(res), length(res)) 
+omega_hat <- matrix(0,length(res), length(res)) 
 #I put back the diagonal element in the diagnonals
-diag(sigma_hat) <- sigma_est
+diag(omega_hat) <- sigma_est
 
-sigma_hat
+omega_hat
+
+GLS_static = GLS_own (y_S,x_S,sigma_hat)
+
 
 
 ####################################################################
