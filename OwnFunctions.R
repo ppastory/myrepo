@@ -5,13 +5,9 @@
 OLS_own = function (y,x,w) 
 #W is the option for different corrections
 #1 for White
-#2 for GLS
 
 {
-  n  <- length(y)
-  k  <- ncol(x)
-  df <- n-k
-  
+ 
   n  <- length(y)
   k  <- ncol(x)
   df <- n-k
@@ -44,7 +40,10 @@ OLS_own = function (y,x,w)
     
     out = rbind(coefs,stdvs,tstats,pvals)
     out = t(out)
-    return(out)
+    
+    output <- list("estimation" = out, "residuals" = res, "param" = k)
+    
+    return(output)
     
   } else if (w == 1){  #this is the case with white correction
     
@@ -78,23 +77,27 @@ OLS_own = function (y,x,w)
     out
     return(out)
     
-  } else if (w == 2){  #this is the case with GLS
-    
-    res2       <- res%*%t(res)
-    #the non-diagnonal elemets of res2 need to have 0
-    #I take away the diagonals
-    diagonal <- diag(res2) 
-    #I create a matrix of 0 of diam
-    res2 <- matrix(0,nrow(res2), ncol(res2)) 
-    #I put back the diagonal element in the diagnonals
-    #but this time I take the inverse to get P
-    diag(res2) <- 1/sqrt(diagonal)
-    #res2 is sigma2 omega in the formulas
-    P <- res2
-    
-    omega_1    <- t(P)%*%P
+  }
+}  
+  
+  GLS_own = function (y,x,o) 
     
     
+  {
+    
+    #let's get the sigma2 first with OLS
+    xy     <- t(x)%*%y
+    xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+    coefs  <- as.vector(xxi%*%xy)
+    
+    yhat   <- as.vector(x%*%coefs)
+    res    <- y-yhat
+    sigma2 <- as.vector(t(res)%*%res/df)
+    
+    #use the input omega
+    omega_1 <- o
+    
+    #compute the coefficients
     coefs_GLS <- solve((t(x) %*% omega_1 %*% x)) %*% t(x) %*% omega_1 %*% y
     coefs_GLS <- c(coefs_GLS)
     
@@ -126,62 +129,10 @@ OLS_own = function (y,x,w)
     out_GLS = t(out_GLS)
     return(out_GLS)
     
-  } else if (w == 3){  #this is the case with EGLS
-    
-    res2       <- res%*%t(res)
-    #I want a proxy for the errors squares 
-    diagonal <- diag(res2) 
-    
-    ln_sigma <- log(diagonal)
-    ln_x <- x #Do we have to log the x if it is already done?
-    
-    xy     <- t(ln_x)%*%ln_sigma
-    xxi    <- solve(t(ln_x)%*%ln_x) #this is (X' X)^(-1)
-    coefs  <- as.vector(xxi%*%xy)
-    
-    yhat   <- as.vector(ln_x%*%coefs)
-    sigma_hat <- exp(yhat)
-    
-    #I want to put my estimated sigma back in a white correction matrix
-    res2 <- matrix(0,nrow(res2), ncol(res2)) 
-    #I put back the diagonal element in the diagnonals
-    #but this time I take the inverse to get P
-    diag(res2) <- sigma_hat
-    
-    cov_EGLS      <- xxi %*% t(x) %*% res2 %*% x %*% xxi
-    cov_EGLS
-    
-    coefs_EGLS <- solve((t(x) %*% res2 %*% x)) %*% t(x) %*% res2 %*% y
-    coefs_EGLS <- c(coefs_GLS)
-    
-    stdvs_EGLS   <- sqrt(diag(cov_W))
-    stdvs_EGLS
-    
-    tstats_EGLS   <- coefs/stdvs_w
-    tstats_EGLS
-    
-    pvals_EGLS    <- 2*(1-pt(abs(tstats_w),df))
-    pvals_EGLS
-    
-    #save output
-    #names(coefs) <- colnames(x)
-    
-    #creating the table
-    coefs  <- round(coefs_EGLS,3)
-    stdvs  <- round(stdvs_EGLS,3)
-    tstats <- round(tstats_EGLS,3)
-    pvals  <- round(pvals_EGLS,3)
-    
-    
-    out_EGLS = rbind(coefs,stdvs,tstats,pvals)
-    
-    out_EGLS = t(out_EGLS)
-    return(out_EGLS)
-    
   }
   
   
-}
+
 
 
 
