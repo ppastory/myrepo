@@ -15,7 +15,7 @@ getwd()
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
-#setwd("C:\\Users\\...") #Windows
+setwd("C:\\Users\\qiszhang\\Documents\\programming/myrepo") #Windows
 
 ## Set output file directory: change to your own directory
 #I want the output directory to be the same 
@@ -79,7 +79,7 @@ beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
 
 ttest_matrix <- matrix(0,repl, length(beta1_test))
 
-for (j in 1:length(beta_test)) {
+for (j in 1:length(beta1_test)) {
 
   for (i in 1:repl) {
   #stochastic X: X = rnorm(T,0,sigma2)
@@ -116,7 +116,7 @@ table <- rbind(cbind(b_0,beta_0_bar),cbind(b_1,beta_1_bar),cbind(0,stdvs_0_bar),
 colnames(table) <- c("population","montecarlo")
 table
 
-ttest <- rep(0,length(beta_test))
+ttest <- rep(0,length(beta1_test))
 
 
 
