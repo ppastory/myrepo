@@ -15,7 +15,7 @@ getwd()
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
-setwd("C:\\Users\\qiszhang\\Documents\\programming/myrepo") #Windows
+setwd("C:/Users/ppastory/Documents/programming/myrepo") #Windows
 
 ## Set output file directory: change to your own directory
 #I want the output directory to be the same 
@@ -75,7 +75,11 @@ beta_1 <- rep(0,repl)
 stdvs_0 <- rep(0,repl)
 stdvs_1 <- rep(0,repl)
 
+#grid of beta1 
 beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
+
+#ttest matrix with column are different beta1 and 
+#the rows are one ttest per simulation
 
 ttest_matrix <- matrix(0,repl, length(beta1_test))
 
@@ -89,6 +93,7 @@ for (j in 1:length(beta1_test)) {
   Y <- X%*%beta + e
   
   OLS_out <- OLS_own(Y,X,0) 
+  
   
   beta_0[i] <- OLS_out$estimation[1,1]
   beta_1[i] <- OLS_out$estimation[2,1]
@@ -116,14 +121,23 @@ table <- rbind(cbind(b_0,beta_0_bar),cbind(b_1,beta_1_bar),cbind(0,stdvs_0_bar),
 colnames(table) <- c("population","montecarlo")
 table
 
-ttest <- rep(0,length(beta1_test))
+#calculate the size
 
+hist(ttest_matrix[,4])
 
+#loop over the t-tests and give me the Critical values for each one
 
-  
-  
-  
+#let's do a matrix of critical values
 
+CV_beta1 <- matrix(0,2,5)
+
+for (j in 1:5) {
+  print(j)
+  CV_beta1[1,j] <- quantile(ttest_matrix[,j], c(.025))
+  CV_beta1[2,j] <- quantile(ttest_matrix[,j], c(.0975))
+}
+
+#
 
 mean_X_bar = mean(X_bar)
 var_X_bar  = var(X_bar)
