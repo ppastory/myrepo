@@ -84,6 +84,10 @@ OLS_own = function (y,x,w)
     
   {
     
+    n  <- length(y)
+    k  <- ncol(x)
+    df <- n-k
+    
     #let's get the sigma2 first with OLS
     xy     <- t(x)%*%y
     xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
@@ -100,7 +104,7 @@ OLS_own = function (y,x,w)
     #compute the coefficients
     coefs_GLS <- solve((t(x) %*% omega_1 %*% x)) %*% t(x) %*% omega_1 %*% y
     coefs_GLS <- c(coefs_GLS)
-    
+
     cov_GLS   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
     cov_GLS
     
