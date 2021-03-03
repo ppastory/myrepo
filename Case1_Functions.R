@@ -83,6 +83,9 @@ OLS_own = function (y,x,w)
     
     
   {
+    #x is the matrix of determinants
+    #y is the matrix of dependent variables
+    #o is the matrix of estimated varianve of error -> the omega matrix
     
     n  <- length(y)
     k  <- ncol(x)
