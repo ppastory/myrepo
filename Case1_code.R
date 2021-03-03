@@ -16,7 +16,7 @@ getwd()
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
-#setwd("C:\\Users\\...") #Windows
+setwd("C:\\Users\\qiszhang\\Documents\\programming/myrepo") #Windows
 
 ## Set output file directory: change to your own directory
 #I want the output directory to be the same 
@@ -63,6 +63,16 @@ lnY_it_D    <- pdt_noNaN$ln.Y_it
 
 y_D<-as.vector(lnC_it_D)
 x_D<-as.matrix(cbind(Cnst=1,lnC_itL1_D,lnP_it_D,lnPn_it_D,lnY_it_D))
+
+# Take first differences
+lnC_it_D_diff   = diff(lnC_it_D, differences = 1)
+lnC_itL1_D_diff = diff(lnC_itL1_D, differences = 1)
+lnP_it_D_diff   = diff(lnP_it_D, differences = 1)                                    # Take first differences                
+lnPn_it_D_diff  = diff(lnPn_it_D, differences = 1)
+lnY_it_D_diff   = diff(lnY_it_D, differences = 1)
+
+y_D_diff<-as.vector(lnC_it_D_diff)
+x_D_diff<-as.matrix(cbind(Cnst=1,lnC_itL1_D_diff,lnP_it_D_diff,lnPn_it_D_diff,lnY_it_D_diff))
 
 #ok now we've got all the data we need!
 
@@ -136,8 +146,12 @@ GLS_static = GLS_own (y_S,x_S,sigma_hat)
 
 
 
-####################################################################
-###                Run OLS on static model                       ###
-####################################################################
+##################################################################
+###     Run OLS on dynamic model in first difference           ###
+##################################################################
 
-OLS_dynamic = OLS_own(y_D,x_D)
+
+
+OLS_dynamic = OLS_own(y_D_diff,x_D_diff,0)
+OLS_dynamic = GLS_own(y_D_diff,x_D_diff,sigma_est)
+
