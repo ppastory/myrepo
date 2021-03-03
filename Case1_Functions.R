@@ -19,8 +19,8 @@ OLS_own = function (y,x,w)
   
   yhat   <- as.vector(x%*%coefs)
   res    <- y-yhat
-  sigma2 <- as.vector(t(res)%*%res/df)
-  
+  sigma2 <- t(res)%*%res/df
+  print(sigma2)
   #case where we only want to do 
   
   if (w == 0){
@@ -91,7 +91,8 @@ OLS_own = function (y,x,w)
     
     yhat   <- as.vector(x%*%coefs)
     res    <- y-yhat
-    sigma2 <- as.vector(t(res)%*%res/df)
+    sigma2 <- t(res)%*%res/df
+    print(sigma2)
     
     #use the input omega
     omega_1 <- o
