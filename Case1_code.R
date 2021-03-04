@@ -152,6 +152,6 @@ GLS_static = GLS_own (y_S,x_S,sigma_hat)
 
 
 
-OLS_dynamic = OLS_own(y_D_diff,x_D_diff,0)
+OLS_dynamic = OLS_own(y_D_diff,x_D_diff,1)
 OLS_dynamic = GLS_own(y_D_diff,x_D_diff,sigma_est)
 
