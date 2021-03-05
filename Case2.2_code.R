@@ -204,5 +204,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #table beta1
   beta_1_mat[1,] <-table_beta1
 
-
+  ################################################
+  ####Let's start with OLS White correction ######
+  ################################################
 
