@@ -92,15 +92,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #now I can have my y !
   Y <- X%*%beta + e
-  
-  ########## Analytical formula for Beta0 and the standard errora ######
-  
-  #Let get analytical std dev, on a SMALL sample
-  OLS_std <- OLS_own(Y,X,0)
-  
-  stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
-  stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
-  
+
   
   #I am initialising the vectors in which beta and other stuff will arrive
   beta_0 <- rep(0,repl)
@@ -145,8 +137,19 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_0_bar <- mean(beta_0)
   beta_1_bar <- mean(beta_1)
   #let's get the numerical standard errors
-  stdvs_0_num <- sqrt(var(beta_0))/sqrt(T)
-  stdvs_1_num <- sqrt(var(beta_1))/sqrt(T)
+  #let's get the numerical standard errors -> truuuue
+  
+  var_0_num <- var(beta_0)/T ##divide by T
+  var_1_num <- var(beta_1)/T
+  
+  stdvs_0_num <- sqrt(var_0_num)
+  stdvs_1_num <- sqrt(var_1_num)
+  
+  #Let get analytical std dev, on a SMALL sample -> truuue
+  OLS_std <- OLS_own(Y,X,0)
+  stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
+  stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
+  
 
   stdvs_0_bar <- mean(stdvs_0)
   stdvs_1_bar <- mean(stdvs_1)
@@ -211,12 +214,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   ########## Analytical formula for Beta0 and the standard errors ######
   
-  #Let get analytical std dev, on a SMALL sample
-  OLSW_std <- OLS_own(Y,X,1)
-  stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
-  stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
-  
-  
+
   #I am initialising the vectors in which beta and other stuff will arrive
   beta_0 <- rep(0,repl)
   beta_1 <- rep(0,repl)
@@ -232,7 +230,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
   for (j in 1:length(beta1_test)) {
-    print(beta1_test[j])
+    
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
@@ -240,7 +238,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       #now I can have my y !
       Y <- X%*%beta + e
       
-      OLS_out <- OLS_own(Y,X,1) #White correction
+      OLS_out <- OLS_own(Y,X,1) 
       
       
       beta_0[i] <- OLS_out[1,1]
@@ -249,7 +247,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       stdvs_0[i] <- OLS_out[1,2]/sqrt(T)
       stdvs_1[i] <- OLS_out[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out[2,2]
+      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -259,9 +257,20 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   beta_0_bar <- mean(beta_0)
   beta_1_bar <- mean(beta_1)
-  #let's get the numerical standard errors
-  stdvs_0_num <- sqrt(var(beta_0))/sqrt(T)
-  stdvs_1_num <- sqrt(var(beta_1))/sqrt(T)
+
+    #let's get the numerical standard errors -> truuuue
+  
+  var_0_num <- var(beta_0)/T ##divide by T
+  var_1_num <- var(beta_1)/T
+  
+  stdvs_0_num <- sqrt(var_0_num)
+  stdvs_1_num <- sqrt(var_1_num)
+  
+  #Let get analytical std dev, on a SMALL sample -> truuue
+  OLS_std <- OLS_own(Y,X,1)
+  stdvs_0_ana <- OLS_std[1,2]/sqrt(T) 
+  stdvs_1_ana <- OLS_std[2,2]/sqrt(T)
+  
   
   stdvs_0_bar <- mean(stdvs_0)
   stdvs_1_bar <- mean(stdvs_1)
@@ -283,7 +292,16 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
   CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
-
+  
+  #
+  
+  rej_function <- function(ttest,LB,UB){
+    if (ttest <= LB || ttest >= UB){
+      return(1)
+    }else{
+      return(0)
+    }
+  }
   
   #initialise matrix of rejection 
   rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
@@ -300,7 +318,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #power_beta1
   
   
-  #Store the result for OLS_W
+  #Store the result for OLS with White
   #table with size and power
   sp_mat[2,] <- cbind(size_beta1,t(power_beta1))
   
@@ -310,6 +328,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #table beta1
   beta_1_mat[2,] <-table_beta1
+  
+  
+  
   
   
   
