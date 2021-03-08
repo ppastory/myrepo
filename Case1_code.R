@@ -142,7 +142,7 @@ diag(omega_hat) <- sigma_est
 
 omega_hat
 
-GLS_static = GLS_own (y_S,x_S,sigma_hat)
+GLS_static = GLS_own (y_S,x_S,omega_hat)
 
 
 
