@@ -24,7 +24,11 @@ OLS_own = function (y,x,w)
   
   if (w == 0){
     
-    stdvs  <- sqrt(sigma2)*sqrt(diag(xxi))
+    #stdvs  <- sqrt(sigma2)*sqrt(diag(xxi))
+    
+    var <- sigma2*xxi
+    stdvs <- sqrt(diag(var))
+    
     tstats <- coefs/stdvs
     pvals  <- 2*(1-pt(abs(tstats),df))
     
