@@ -68,7 +68,7 @@ for (T in sz){
   iter <- iter + 1
   
 #repl number of replication
-repl <- 100 #small replication to check
+repl <- 10000 #small replication to check
 #df is the number of degrees of freedom
 df <- 1
 
