@@ -40,8 +40,8 @@ source("Case1_Functions.R")
 
 #Setting the seeds so that the simulation gives us the same results
 set.seed(123)
-#n is the size of the sample
-sz <- c(25,100,1000,10000,100000)
+#sz is the size of the sample
+sz <- c(25,50,100,500,2500)
 
 
 ################################################
@@ -68,7 +68,7 @@ for (T in sz){
   iter <- iter + 1
   
 #repl number of replication
-repl <- 10000
+repl <- 100 #small replication to check
 #df is the number of degrees of freedom
 df <- 1
 
@@ -122,10 +122,12 @@ for (j in 1:length(beta1_test)) {
   beta_0[i] <- OLS_out$estimation[1,1]
   beta_1[i] <- OLS_out$estimation[2,1]
   
+  print(OLS_out$estimation[,2])
+  
   stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
   stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
   
-  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/(OLS_out$estimation[2,2]/sqrt(T)) #divided by sqrt T
   }
 
 }
@@ -136,15 +138,15 @@ colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 beta_0_bar <- mean(beta_0)
 beta_1_bar <- mean(beta_1)
 
-#let's get the numerical standard errors
-stdvs_0_num <- sqrt(var(beta_0))/sqrt(T)
-stdvs_1_num <- sqrt(var(beta_1))/sqrt(T)
+#let's get the numerical standard errors -> truuuue
 
 var_0_num <- var(beta_0)/T ##divide by T?
 var_1_num <- var(beta_1)/T
 
+stdvs_0_num <- sqrt(var_0_num)
+stdvs_1_num <- sqrt(var_1_num)
 
-#Let get analytical std dev, on a SMALL sample
+#Let get analytical std dev, on a SMALL sample -> truuue
 OLS_std <- OLS_own(Y,X,0)
 stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
 stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
@@ -156,6 +158,9 @@ var_01_ana  <- sigma2*diag(xxi)/T
 var_0_ana <- var_01_ana[1]
 var_1_ana <- var_01_ana[2]
 
+stdvs_1_ana_test <- sqrt(var_1_ana)
+
+#estimated standard errors
 stdvs_0_bar <- mean(stdvs_0)
 stdvs_1_bar <- mean(stdvs_1)
 
