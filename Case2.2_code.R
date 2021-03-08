@@ -41,8 +41,8 @@ source("Case1_Functions.R")
 #Setting the seeds so that the simulation gives us the same results
 set.seed(123)
 
-#we assume we have a big sample
-T <- 5000
+#we assume we have a ok sample
+T <- 200
 
 #repl number of replication
 repl <- 10000
@@ -97,6 +97,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #Let get analytical std dev, on a SMALL sample
   OLS_std <- OLS_own(Y,X,0)
+  
   stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
   stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
   
@@ -133,7 +134,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
       stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out$estimation[2,2]
+      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -231,7 +232,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
   for (j in 1:length(beta1_test)) {
-    
+    print(beta1_test[j])
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
@@ -239,16 +240,16 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       #now I can have my y !
       Y <- X%*%beta + e
       
-      OLS_out <- OLS_own(Y,X,0) 
+      OLS_out <- OLS_own(Y,X,1) #White correction
       
       
-      beta_0[i] <- OLS_out$estimation[1,1]
-      beta_1[i] <- OLS_out$estimation[2,1]
+      beta_0[i] <- OLS_out[1,1]
+      beta_1[i] <- OLS_out[2,1]
       
-      stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
-      stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
+      stdvs_0[i] <- OLS_out[1,2]/sqrt(T)
+      stdvs_1[i] <- OLS_out[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out$estimation[2,2]
+      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out[2,2]
     }
     
   }
