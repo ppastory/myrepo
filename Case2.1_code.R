@@ -41,7 +41,7 @@ source("Case1_Functions.R")
 #Setting the seeds so that the simulation gives us the same results
 set.seed(123)
 #n is the size of the sample
-sz <- c(25,50,100,500,2500)
+sz <- c(25,100,1000,10000,100000)
 
 
 ################################################
@@ -80,7 +80,6 @@ y_bar <- rep(0,repl)
 #initialising the parameters value
 b_0 <- 10
 b_1 <- 1
-beta <- 
 sigma2 <- 1
 #draw only once the X from a normal distribution
 xsim <- rnorm(T,0,1)
@@ -126,7 +125,7 @@ for (j in 1:length(beta1_test)) {
   stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
   stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
   
-  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out$estimation[2,2]
+  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
   }
 
 }
@@ -136,11 +135,12 @@ colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 
 beta_0_bar <- mean(beta_0)
 beta_1_bar <- mean(beta_1)
+
 #let's get the numerical standard errors
 stdvs_0_num <- sqrt(var(beta_0))/sqrt(T)
 stdvs_1_num <- sqrt(var(beta_1))/sqrt(T)
 
-var_0_num <- var(beta_0)/T
+var_0_num <- var(beta_0)/T ##divide by T?
 var_1_num <- var(beta_1)/T
 
 
@@ -180,10 +180,6 @@ table_beta <- cbind(b_0,beta_0_bar,b_1,beta_1_bar)
 
 colnames(table_beta) <- c("Beta_0_pop","Beta_0_MC","Beta_1_pop","Beta_1_MC")
 table_beta <- cbind(T,table_beta)
-
-#let's store the betas in a table
-
-beta_matrix[iter,] <- cbind(table_beta)
 
 
 #loop over the t-tests and give me the Critical values for each one
