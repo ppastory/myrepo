@@ -208,3 +208,107 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   ####Let's start with OLS White correction ######
   ################################################
 
+  ########## Analytical formula for Beta0 and the standard errors ######
+  
+  #Let get analytical std dev, on a SMALL sample
+  OLSW_std <- OLS_own(Y,X,1)
+  stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
+  stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
+  
+  
+  #I am initialising the vectors in which beta and other stuff will arrive
+  beta_0 <- rep(0,repl)
+  beta_1 <- rep(0,repl)
+  stdvs_0 <- rep(0,repl)
+  stdvs_1 <- rep(0,repl)
+  
+  #grid of beta1 
+  beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
+  
+  #ttest matrix with column are different beta1 and 
+  #the rows are one ttest per simulation
+  
+  ttest_matrix <- matrix(0,repl, length(beta1_test))
+  
+  for (j in 1:length(beta1_test)) {
+    
+    for (i in 1:repl) {
+      #stochastic X: X = rnorm(T,0,sigma2)
+      #let's get some errors, we define sigma 2 =1 earlier
+      e <- rnorm(T,0,sigma2)
+      #now I can have my y !
+      Y <- X%*%beta + e
+      
+      OLS_out <- OLS_own(Y,X,0) 
+      
+      
+      beta_0[i] <- OLS_out$estimation[1,1]
+      beta_1[i] <- OLS_out$estimation[2,1]
+      
+      stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
+      stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
+      
+      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/OLS_out$estimation[2,2]
+    }
+    
+  }
+  
+  colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
+  
+  
+  beta_0_bar <- mean(beta_0)
+  beta_1_bar <- mean(beta_1)
+  #let's get the numerical standard errors
+  stdvs_0_num <- sqrt(var(beta_0))/sqrt(T)
+  stdvs_1_num <- sqrt(var(beta_1))/sqrt(T)
+  
+  stdvs_0_bar <- mean(stdvs_0)
+  stdvs_1_bar <- mean(stdvs_1)
+  
+  
+  #first row of OLS
+  table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
+  colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
+  
+  #first row of OLS
+  table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
+  colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
+  
+  
+  
+  #loop over the t-tests and give me the Critical values for each one
+  
+  #let's do a matrix of critical values
+  
+  CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
+  CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
+
+  
+  #initialise matrix of rejection 
+  rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
+  #Lets store the 1 and 0 of rejection in a matrix
+  for (j in 1:5){
+    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+  }
+  #this is the size, the mean of column 1 for which beta =1
+  size_beta1 <- mean(rej_matrix[,1])
+  #size_beta1
+  
+  #the power is P(non reject if Beta != 1) -> 1 - P(reject)
+  power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+  #power_beta1
+  
+  
+  #Store the result for OLS_W
+  #table with size and power
+  sp_mat[2,] <- cbind(size_beta1,t(power_beta1))
+  
+  #table beta0
+  beta_0_mat[2,] <- table_beta0 
+  
+  
+  #table beta1
+  beta_1_mat[2,] <-table_beta1
+  
+  
+  
