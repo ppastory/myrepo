@@ -95,8 +95,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   
   #I am initialising the vectors in which beta and other stuff will arrive
-  beta_0 <- rep(0,repl)
-  beta_1 <- rep(0,repl)
+  beta_0_OLS <- rep(0,repl)
+  beta_1_OLS <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
   
@@ -120,13 +120,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       OLS_out <- OLS_own(Y,X,0) 
       
       
-      beta_0[i] <- OLS_out$estimation[1,1]
-      beta_1[i] <- OLS_out$estimation[2,1]
+      beta_0_0LS[i] <- OLS_out$estimation[1,1]
+      beta_1_OLS[i] <- OLS_out$estimation[2,1]
       
       stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
       stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -134,13 +134,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0)
-  beta_1_bar <- mean(beta_1)
+  beta_0_bar <- mean(beta_0_0LS)
+  beta_1_bar <- mean(beta_1_OLS)
   #let's get the numerical standard errors
   #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0)/T ##divide by T
-  var_1_num <- var(beta_1)/T
+  var_0_num <- var(beta_0_0LS)/T ##divide by T
+  var_1_num <- var(beta_1_OLS)/T
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
@@ -214,8 +214,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
 
   #I am initialising the vectors in which beta and other stuff will arrive
-  beta_0 <- rep(0,repl)
-  beta_1 <- rep(0,repl)
+  beta_0_OLSW <- rep(0,repl)
+  beta_1_OLSW <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
   
@@ -239,13 +239,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       OLS_out <- OLS_own(Y,X,1) 
       
       
-      beta_0[i] <- OLS_out[1,1]
-      beta_1[i] <- OLS_out[2,1]
+      beta_0_OLSW[i] <- OLS_out[1,1]
+      beta_1_OLSW[i] <- OLS_out[2,1]
       
       stdvs_0[i] <- OLS_out[1,2]/sqrt(T)
       stdvs_1[i] <- OLS_out[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -253,13 +253,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0)
-  beta_1_bar <- mean(beta_1)
+  beta_0_bar <- mean(beta_0_OLSW)
+  beta_1_bar <- mean(beta_1_OLSW)
 
     #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0)/T ##divide by T
-  var_1_num <- var(beta_1)/T
+  var_0_num <- var(beta_0_OLSW)/T ##divide by T
+  var_1_num <- var(beta_1_OLSW)/T
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
@@ -326,8 +326,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   
   #I am initialising the vectors in which beta and other stuff will arrive
-  beta_0 <- rep(0,repl)
-  beta_1 <- rep(0,repl)
+  beta_0_GLS <- rep(0,repl)
+  beta_1_GLS <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
   
@@ -370,13 +370,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       GLS_static = GLS_own (Y,X,omega_1)
       
       
-      beta_0[i] <- GLS_static[1,1]
-      beta_1[i] <- GLS_static[2,1]
+      beta_0_GLS[i] <- GLS_static[1,1]
+      beta_1_GLS[i] <- GLS_static[2,1]
       
       stdvs_0[i] <- GLS_static[1,2]/sqrt(T)
       stdvs_1[i] <- GLS_static[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -384,13 +384,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0)
-  beta_1_bar <- mean(beta_1)
+  beta_0_bar <- mean(beta_0_GLS)
+  beta_1_bar <- mean(beta_1_GLS)
   
   #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0)/T ##divide by T
-  var_1_num <- var(beta_1)/T
+  var_0_num <- var(beta_0_GLS)/T ##divide by T
+  var_1_num <- var(beta_1_GLS)/T
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
@@ -485,8 +485,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   
   #I am initialising the vectors in which beta and other stuff will arrive
-  beta_0 <- rep(0,repl)
-  beta_1 <- rep(0,repl)
+  beta_0_EGLS <- rep(0,repl)
+  beta_1_EGLS <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
   
@@ -508,46 +508,42 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       Y <- X%*%beta + e
       
       
-      OLS_static = OLS_own(Y,X,0)
+      #For EGLS, we assume that Var(miu_{i,t}) is sigma_i^2
       
-      res <- OLS_static$residuals
-      k <- OLS_static$param
+      n  <- length(Y)
+      k  <- ncol(X)
+
+      OLS_out <- OLS_own(Y,X,0) 
       
-      #We have 30 error terms per states
-      t <- 30
-      
-      #There is one different sigma per state (46 states)
-      sigma_i <- seq(1:46)
+      res <- OLS_out$residuals
       
       
-      #let's compute the sigma_i 
-      for (i in 1:(length(res)/t)){
-        sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
-      }
-      #Maybe K is 46 but not sure
+      x <- X
+      y <- log(diag(res%*%t(res)))
       
-      #Now we create the diagonal of sigma_hat
+      ## Run OLS
+      xy     <- t(x)%*%y #indeed I need some kind of X_i
+      xxi    <- solve(t(x)%*%x)
+      coefs  <- as.vector(xxi%*%xy)
+      sigma_hat   <- as.vector(x%*%coefs)
       
-      sigma_est<-rep(sigma_i,each=t)
-      
+      sigma_hat <- exp(sigma_hat)
       #now we create the matrix and put sigma_hat as the diagonal of that matrix
       
       omega_hat <- matrix(0,length(res), length(res)) 
       #I put back the diagonal element in the diagnonals
-      diag(omega_hat) <- sigma_est
-      
-      omega_hat
+      diag(omega_hat) <- sigma_hat
       
       GLS_static = GLS_own (Y,X,omega_hat)
       
       
-      beta_0[i] <- GLS_static[1,1]
-      beta_1[i] <- GLS_static[2,1]
+      beta_0_EGLS[i] <- GLS_static[1,1]
+      beta_1_EGLS[i] <- GLS_static[2,1]
       
       stdvs_0[i] <- GLS_static[1,2]/sqrt(T)
       stdvs_1[i] <- GLS_static[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
     
   }
@@ -555,44 +551,35 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0)
-  beta_1_bar <- mean(beta_1)
+  beta_0_bar <- mean(beta_0_EGLS)
+  beta_1_bar <- mean(beta_1_EGLS)
   
   #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0)/T ##divide by T
-  var_1_num <- var(beta_1)/T
+  var_0_num <- var(beta_0_EGLS)/T ##divide by T
+  var_1_num <- var(beta_1_EGLS)/T
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
   #Let get analytical std dev, on a SMALL sample -> truuue
-  OLS_std <- OLS_own(Y,X,0)
-  res <- OLS_static$residuals
-  k <- OLS_static$param
+  res <- OLS_own(Y,X,0)$residuals
   
-  #We have 30 error terms per states
-  t <- 30
+  x <- X
+  y <- log(diag(res%*%t(res)))
   
-  #There is one different sigma per state (46 states)
-  sigma_i <- seq(1:46)
+  ## Run OLS
+  xy     <- t(x)%*%y #indeed I need some kind of X_i
+  xxi    <- solve(t(x)%*%x)
+  coefs  <- as.vector(xxi%*%xy)
+  sigma_hat   <- as.vector(x%*%coefs)
   
-  
-  #let's compute the sigma_i 
-  for (i in 1:(length(res)/t)){
-    sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
-  }
-  #Maybe K is 46 but not sure
-  
-  #Now we create the diagonal of sigma_hat
-  
-  sigma_est<-rep(sigma_i,each=t)
-  
+  sigma_hat <- exp(sigma_hat)
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
   #I put back the diagonal element in the diagnonals
-  diag(omega_hat) <- sigma_est
+  diag(omega_hat) <- sigma_hat
   
   GLS_static = GLS_own (Y,X,omega_hat)
   
