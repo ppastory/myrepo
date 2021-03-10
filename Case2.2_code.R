@@ -45,7 +45,7 @@ set.seed(123)
 T <- 200
 
 #repl number of replication
-repl <- 10000
+repl <- 1000 #less number of replication to work on the code
 #df is the number of degrees of freedom
 df <- 1
 
@@ -95,7 +95,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   
   #I am initialising the vectors in which beta and other stuff will arrive
-  beta_0_OLS <- rep(0,repl)
+  beta_0_0LS <- rep(0,repl)
   beta_1_OLS <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
@@ -367,7 +367,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       omega_1    <- t(P)%*%P
       
-      GLS_static = GLS_own (Y,X,omega_1)
+      GLS_static = GLS_own(Y,X,omega_1)
       
       
       beta_0_GLS[i] <- GLS_static[1,1]
