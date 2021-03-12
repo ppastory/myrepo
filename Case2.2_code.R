@@ -516,9 +516,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       OLS_out <- OLS_own(Y,X,0) 
       
       res <- OLS_out$residuals
-      
-      
-      x <- X
+      #I take absolute value in log because otherwise taking log(X) does not work
+      x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
       y <- log(diag(res%*%t(res)))
       
       ## Run OLS
@@ -565,7 +564,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #Let get analytical std dev, on a SMALL sample -> truuue
   res <- OLS_own(Y,X,0)$residuals
   
-  x <- X
+  x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
   y <- log(diag(res%*%t(res)))
   
   ## Run OLS
