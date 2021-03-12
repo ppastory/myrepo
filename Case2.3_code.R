@@ -178,12 +178,12 @@ stdvs_0_numw <- sqrt(var_0_numw)
 stdvs_1_numw <- sqrt(var_1_numw)
 
 #first row of OLS
-table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
-colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
+table_std_num <- cbind(stdvs_0_nump,stdvs_1_nump,stdvs_0_numw,stdvs_1_numw)
+colnames(table_std_num) <- c("pair std beta0","pair std beta1","wild std beta0","wild std beta1")
+table_std_num
 
-#first row of OLS
-table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
-colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
+
+
 
 
 
