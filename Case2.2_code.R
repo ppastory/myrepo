@@ -420,8 +420,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   GLS_static = GLS_own (Y,X,omega_1)
   
-  stdvs_0_ana <- GLS_static[1,2]/sqrt(T)
-  stdvs_1_ana <- solve(t(xsim) %*% omega_1 %*%xsim)/sqrt(T)
+  stdvs_0_ana <- GLS_static[1,2]
+  stdvs_1_ana <- solve(t(X[,2]) %*% omega_1 %*%X[,2])
  
   
   #estimated standard errors
@@ -587,9 +587,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   GLS_static = GLS_own (Y,X,omega_hat)
   
-  stdvs_0_ana <- GLS_static[1,2]/sqrt(T)
+  stdvs_0_ana <- GLS_static[1,2]
   #stdvs_1_ana <- GLS_static[2,2]/sqrt(T)
-  stdvs_1_ana <- solve(t(xsim) %*% omega_1 %*%xsim)/sqrt(T)
+  stdvs_1_ana <- solve(t(X[,2]) %*% omega_hat %*%X[,2])/sqrt(T)
   
   
   #estimated standard errors
