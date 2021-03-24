@@ -414,10 +414,15 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   omega_1    <- t(P)%*%P
   
+  omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
+  
+  diag(omega_1) <- 1/diagonal
+  
   GLS_static = GLS_own (Y,X,omega_1)
   
   stdvs_0_ana <- GLS_static[1,2]/sqrt(T)
-  stdvs_1_ana <- GLS_static[2,2]/sqrt(T)
+  stdvs_1_ana <- solve(t(xsim) %*% omega_1 %*%xsim)/sqrt(T)
+ 
   
   #estimated standard errors
   stdvs_0_bar <- mean(stdvs_0)
@@ -583,7 +588,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   GLS_static = GLS_own (Y,X,omega_hat)
   
   stdvs_0_ana <- GLS_static[1,2]/sqrt(T)
-  stdvs_1_ana <- GLS_static[2,2]/sqrt(T)
+  #stdvs_1_ana <- GLS_static[2,2]/sqrt(T)
+  stdvs_1_ana <- solve(t(xsim) %*% omega_1 %*%xsim)/sqrt(T)
+  
   
   #estimated standard errors
   stdvs_0_bar <- mean(stdvs_0)
@@ -634,7 +641,12 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #table beta1
   beta_1_mat[4,] <-table_beta1
   
+  #so there is a problem because the true std (analytical and numerical) should
+  #coincide. In all cases, we correct for small (dividing by sqrt of T) so it really
+  #should be the same.
+  #example of beta_1
   
+  beta_1_mat[,3:4]
   
   
   
