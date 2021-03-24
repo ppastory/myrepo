@@ -88,11 +88,11 @@ X <- as.matrix(cbind(Cnst=1,xsim))
 #let's put the beta in matrix form
 beta <- as.matrix(rbind(b_0,b_1))
 #let's get some errors
-e <- rnorm(T,0,sigma2)
+e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
 
 #now I can have my y !
 Y <- X%*%beta + e
-
+#bootstrap replication
 brepl <- 50
 
 #I am initialising the vectors in which beta and other stuff will arrive -Pairwise
