@@ -46,8 +46,9 @@ T <- 200
 
 #repl number of replication
 repl <- 1000 #less number of replication to work on the code
-#df is the number of degrees of freedom
-df <- 1
+
+#df is the number of degrees of freedom, always n-k!
+#df <- n-k
 
 ############################################
 ######### Initialise Matrix ################
@@ -80,8 +81,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   b_0 <- 10
   b_1 <- 1
   sigma2 <- 1
-  alpa <- 4
+  alpha <- 4
   #draw only once the X from a normal distribution
+  #X is fixed over repeated samples
   xsim <- rnorm(T,0,1)
   #put the constant in X to have right dimension 
   X <- as.matrix(cbind(Cnst=1,xsim))
@@ -123,10 +125,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       beta_0_0LS[i] <- OLS_out$estimation[1,1]
       beta_1_OLS[i] <- OLS_out$estimation[2,1]
       
-      stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
-      stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
+     #stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
+     #stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
       
-      ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
+      stdvs_1[i] <- OLS_out$estimation[2,2]
+      
+      ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
   }
@@ -136,19 +141,18 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   beta_0_bar <- mean(beta_0_0LS)
   beta_1_bar <- mean(beta_1_OLS)
-  #let's get the numerical standard errors
+
   #let's get the numerical standard errors -> truuuue
-  
-  var_0_num <- var(beta_0_0LS)/T ##divide by T
-  var_1_num <- var(beta_1_OLS)/T
+  var_0_num <- var(beta_0_0LS)
+  var_1_num <- var(beta_1_OLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
   #Let get analytical std dev, on a SMALL sample -> truuue
   OLS_std <- OLS_own(Y,X,0)
-  stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
-  stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
+  stdvs_0_ana <- OLS_std$estimation[1,2]
+  stdvs_1_ana <- OLS_std$estimation[2,2]
   
 
   stdvs_0_bar <- mean(stdvs_0)
@@ -242,8 +246,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       beta_0_OLSW[i] <- OLS_out[1,1]
       beta_1_OLSW[i] <- OLS_out[2,1]
       
-      stdvs_0[i] <- OLS_out[1,2]/sqrt(T)
-      stdvs_1[i] <- OLS_out[2,2]/sqrt(T)
+      stdvs_0[i] <- OLS_out[1,2]
+      stdvs_1[i] <- OLS_out[2,2]
       
       ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
@@ -258,16 +262,16 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
     #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0_OLSW)/T ##divide by T
-  var_1_num <- var(beta_1_OLSW)/T
+  var_0_num <- var(beta_0_OLSW) ##divide by T
+  var_1_num <- var(beta_1_OLSW)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
   #Let get analytical std dev, on a SMALL sample -> truuue
   OLS_std <- OLS_own(Y,X,1)
-  stdvs_0_ana <- OLS_std[1,2]/sqrt(T) 
-  stdvs_1_ana <- OLS_std[2,2]/sqrt(T)
+  stdvs_0_ana <- OLS_std[1,2]
+  stdvs_1_ana <- OLS_std[2,2]
   
   
   stdvs_0_bar <- mean(stdvs_0)
@@ -352,20 +356,17 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       res <- OLS_out$residuals
       
-      ### I compute Omega outside of the funciton
-      res2       <- res%*%t(res)
+      ### I compute Omega outside of the function
+      res2<- res%*%t(res)
       #the non-diagnonal elemets of res2 need to have 0
       #I take away the diagonals
       diagonal <- diag(res2) 
-      #I create a matrix of 0 of diam
-      res2 <- matrix(0,nrow(res2), ncol(res2)) 
-      #I put back the diagonal element in the diagnonals
-      #but this time I take the inverse to get P
-      diag(res2) <- 1/sqrt(diagonal)
-      #res2 is sigma2 omega in the formulas
-      P <- res2
+      #I create a matrix of 0 of dimension of Res2
       
-      omega_1    <- t(P)%*%P
+      omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
+      #the diagonal is 1/sigma_n^2
+      diag(omega_1) <- 1/diagonal
+      
       
       GLS_static = GLS_own(Y,X,omega_1)
       
@@ -373,10 +374,10 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       beta_0_GLS[i] <- GLS_static[1,1]
       beta_1_GLS[i] <- GLS_static[2,1]
       
-      stdvs_0[i] <- GLS_static[1,2]/sqrt(T)
-      stdvs_1[i] <- GLS_static[2,2]/sqrt(T)
+      stdvs_0[i] <- GLS_static[1,2]
+      stdvs_1[i] <- GLS_static[2,2]
       
-      ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
   }
@@ -389,40 +390,39 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0_GLS)/T ##divide by T
-  var_1_num <- var(beta_1_GLS)/T
+  var_0_num <- var(beta_0_GLS) ##divide by T
+  var_1_num <- var(beta_1_GLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
   #Let get analytical std dev, on a SMALL sample -> truuue
+  e <- rnorm(T,0,sigma2)
+  #now I can have my y !
+  Y <- X%*%beta + e
   OLS_std <- OLS_own(Y,X,0)
   res <- OLS_out$residuals
+  n  <- length(y)
+  k  <- ncol(x)
+  df <- n-k
+  sigma2 <- as.vector(t(res)%*%res/df)
   
   ### I compute Omega outside of the funciton
+  
   res2       <- res%*%t(res)
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
   diagonal <- diag(res2) 
-  #I create a matrix of 0 of diam
-  res2 <- matrix(0,nrow(res2), ncol(res2)) 
-  #I put back the diagonal element in the diagnonals
-  #but this time I take the inverse to get P
-  diag(res2) <- 1/sqrt(diagonal)
-  #res2 is sigma2 omega in the formulas
-  P <- res2
-  
-  omega_1    <- t(P)%*%P
+  #I create a matrix of 0 of dimension of Res2
   
   omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
-  
+  #
   diag(omega_1) <- 1/diagonal
   
-  GLS_static = GLS_own (Y,X,omega_1)
+  GLS_static = GLS_own(Y,X,omega_1)
   
   stdvs_0_ana <- GLS_static[1,2]
-  stdvs_1_ana <- solve(t(X[,2]) %*% omega_1 %*%X[,2])
- 
+  stdvs_1_ana <- GLS_static[2,2]
   
   #estimated standard errors
   stdvs_0_bar <- mean(stdvs_0)
@@ -521,22 +521,27 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       OLS_out <- OLS_own(Y,X,0) 
       
       res <- OLS_out$residuals
+      #I know that sigma2 is 1 and alpha is 4
+      #so the coefficients are ln(1) = 0 and 4
+      coef <- as.matrix(rbind(0,4))
+      
       #I take absolute value in log because otherwise taking log(X) does not work
       x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
-      y <- log(diag(res%*%t(res)))
-      
-      ## Run OLS
-      xy     <- t(x)%*%y #indeed I need some kind of X_i
-      xxi    <- solve(t(x)%*%x)
-      coefs  <- as.vector(xxi%*%xy)
-      sigma_hat   <- as.vector(x%*%coefs)
-      
+
+      ## predict the sigma_hat based on these coefficients
+      #But I am actually predicting ln(sigma_hat)
+      sigma_hat   <- as.vector(x%*%coef)
+      #So I need to take the exponent
       sigma_hat <- exp(sigma_hat)
+      
+      #Sigma_hat is the diagonal is the other specification
+      
       #now we create the matrix and put sigma_hat as the diagonal of that matrix
       
       omega_hat <- matrix(0,length(res), length(res)) 
-      #I put back the diagonal element in the diagnonals
-      diag(omega_hat) <- sigma_hat
+      
+      #I put back the diagonal element in the diagonals
+      diag(omega_hat) <- 1/sigma_hat
       
       GLS_static = GLS_own (Y,X,omega_hat)
       
@@ -544,8 +549,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       beta_0_EGLS[i] <- GLS_static[1,1]
       beta_1_EGLS[i] <- GLS_static[2,1]
       
-      stdvs_0[i] <- GLS_static[1,2]/sqrt(T)
-      stdvs_1[i] <- GLS_static[2,2]/sqrt(T)
+      stdvs_0[i] <- GLS_static[1,2]
+      stdvs_1[i] <- GLS_static[2,2]
       
       ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
     }
@@ -560,8 +565,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #let's get the numerical standard errors -> truuuue
   
-  var_0_num <- var(beta_0_EGLS)/T ##divide by T
-  var_1_num <- var(beta_1_EGLS)/T
+  var_0_num <- var(beta_0_EGLS)##divide by T
+  var_1_num <- var(beta_1_EGLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
@@ -569,28 +574,36 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #Let get analytical std dev, on a SMALL sample -> truuue
   res <- OLS_own(Y,X,0)$residuals
   
+  #I know that sigma2 is 1 and alpha is 4
+  #so the coefficients are ln(1) = 0 and 4
+  coef <- as.matrix(rbind(0,4))
+  
+  #I take absolute value in log because otherwise taking log(X) does not work
   x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
-  y <- log(diag(res%*%t(res)))
   
-  ## Run OLS
-  xy     <- t(x)%*%y #indeed I need some kind of X_i
-  xxi    <- solve(t(x)%*%x)
-  coefs  <- as.vector(xxi%*%xy)
-  sigma_hat   <- as.vector(x%*%coefs)
-  
+  ## predict the sigma_hat based on these coefficients
+  #But I am actually predicting ln(sigma_hat)
+  sigma_hat   <- as.vector(x%*%coef)
+  #So I need to take the exponent
   sigma_hat <- exp(sigma_hat)
+  
+  #Sigma_hat is the diagonal is the other specification
+  
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
-  #I put back the diagonal element in the diagnonals
-  diag(omega_hat) <- sigma_hat
+  
+  #I put back the diagonal element in the diagonals
+  diag(omega_hat) <- 1/sigma_hat
   
   GLS_static = GLS_own (Y,X,omega_hat)
   
-  stdvs_0_ana <- GLS_static[1,2]
-  #stdvs_1_ana <- GLS_static[2,2]/sqrt(T)
-  stdvs_1_ana <- solve(t(X[,2]) %*% omega_hat %*%X[,2])/sqrt(T)
   
+  beta_0_EGLS[i] <- GLS_static[1,1]
+  beta_1_EGLS[i] <- GLS_static[2,1]
+  
+  stdvs_0_ana[i] <- GLS_static[1,2]
+  stdvs_1_ana[i] <- GLS_static[2,2]
   
   #estimated standard errors
   stdvs_0_bar <- mean(stdvs_0)
