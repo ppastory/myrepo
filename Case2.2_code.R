@@ -389,9 +389,23 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       diagonal <- sigma2*xsim^alpha 
       #I create a matrix of 0 of dimension of Res2
       
-      omega_1 <- matrix(0,T, T) 
+      omega_1 <- matrix(0,T,T) 
       #the diagonal is 1/sigma_n^2
       diag(omega_1) <- 1/diagonal
+      
+      #I need to do it by end because the formula computes a different sigma2 
+      #than the one we are supposed to assume
+      x <- X
+      
+      var_01_MC   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
+      
+      
+      var_0_MC <- var_01_MC[1,1]
+      var_1_MC <- var_01_MC[2,2]
+      
+      #the diagonal elements are the std of Betas
+      stdvs_0[i] <- sqrt(var_01_MC[1,1])
+      stdvs_1[i] <- sqrt(var_01_MC[2,2])
       
       
       GLS_static = GLS_own(Y,X,omega_1)
@@ -399,9 +413,6 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       beta_0_GLS[i] <- GLS_static[1,1]
       beta_1_GLS[i] <- GLS_static[2,1]
-      
-      stdvs_0[i] <- GLS_static[1,2]
-      stdvs_1[i] <- GLS_static[2,2]
       
       ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] 
     }
