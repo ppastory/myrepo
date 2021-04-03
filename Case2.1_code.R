@@ -129,7 +129,7 @@ for (j in 1:length(beta1_test)) {
   stdvs_0[i] <- OLS_out$estimation[1,2]
   stdvs_1[i] <- OLS_out$estimation[2,2]
   
-  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/(OLS_out$estimation[2,2]/sqrt(T)) #divided by sqrt T
+  ttest_matrix[i,j] <- (beta_1[i] - beta1_test[j])/(OLS_out$estimation[2,2])
   }
 
 }
@@ -199,15 +199,18 @@ colnames(table_beta) <- c("Beta_0_pop","Beta_0_MC","Beta_1_pop","Beta_1_MC")
 table_beta <- cbind(T,table_beta)
 
 
+###
+#C Compute size and power
+###
+
 #loop over the t-tests and give me the Critical values for each one
 colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 
 #let's do a matrix of critical values, alpha is 5%
+#the t statistics follows a student t with 2 degrees of freedom 
 
-CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
-CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
-
-#
+CV_beta1_LB <- qt(p=.05/2, df=2, lower.tail=TRUE)
+CV_beta1_UB <- qt(p=.05/2, df=2, lower.tail=FALSE)
 
 rej_function <- function(ttest,LB,UB){
   if (ttest <= LB || ttest >= UB){
@@ -223,7 +226,7 @@ rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
 for (j in 1:5){
   rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
 }
-#this is the size, the mean of column 1 for which beta =1
+#this is the size, the mean of column 1 for which beta = 1
 size_beta1 <- mean(rej_matrix[,1])
 #size_beta1
 
