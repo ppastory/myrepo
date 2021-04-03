@@ -35,7 +35,7 @@ library(plm)
 source("Case1_Functions.R")
 
 ####################################################################
-#Case 2.1. Monte Carlo simulation for mean of Chi2 distributed variable
+#Case 2.1. Monte Carlo simulation for OLS, X deterministic ########
 ####################################################################
 
 #Setting the seeds so that the simulation gives us the same results
@@ -54,9 +54,9 @@ table_final_beta0 <- matrix(0,length(sz),8)
  
 colnames(table_final_beta0) <- c("Sample size","population","MC","std_analytical","std_num","std_estimated","Var_ana","Var_estimated")
  
-table_final_beta1 <- matrix(0,length(sz), 10)
+table_final_beta1 <- matrix(0,length(sz), 9)
 
-colnames(table_final_beta1) <- c("Sample size","population","MC","std_analytical","std_num","std_estimated","Var_ana","Var_estimated","2.5%","97.5%")
+colnames(table_final_beta1) <- c("Sample size","population","MC","std_analytical","std_num","std_estimated","Var_ana","Var_estimated","CV")
 
 table_final_sp <- matrix(0,length(sz), 6)
 
@@ -213,11 +213,10 @@ colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 #let's do a matrix of critical values, alpha is 5%
 #the t statistics follows a student t with 2 degrees of freedom 
 
-CV_beta1_LB <- qt(p=.05/2, df=2, lower.tail=TRUE)
-CV_beta1_UB <- qt(p=.05/2, df=2, lower.tail=FALSE)
+CV_beta1 <- qt(p=.05, df=2, lower.tail=FALSE)
 
-rej_function <- function(ttest,LB,UB){
-  if (ttest <= LB || ttest >= UB){
+rej_function <- function(ttest,cv){
+  if (abs(ttest) > cv){
     return(1)
   }else{
     return(0)
@@ -228,7 +227,7 @@ rej_function <- function(ttest,LB,UB){
 rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
 #Lets store the 1 and 0 of rejection in a matrix
 for (j in 1:5){
-  rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+  rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
 }
 #this is the size, the mean of column 1 for which beta = 1
 size_beta1 <- mean(rej_matrix[,1])
@@ -242,11 +241,15 @@ power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
 table_final_beta0[iter,] <- cbind(T,b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est,var_0_ana,var_0_est)
 
 #this is the table in which you have all beta_1
-table_final_beta1[iter,] <- cbind(T,b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est,var_1_ana,var_1_est,CV_beta1_LB,CV_beta1_UB)
+table_final_beta1[iter,] <- cbind(T,b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est,var_1_ana,var_1_est,CV_beta1)
 
 #table with size and power
 table_final_sp[iter,] <- cbind(T,size_beta1,t(power_beta1))
 
 }
 
+
+##################################
+###### With x stochastic #########
+##################################
 
