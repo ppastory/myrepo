@@ -426,12 +426,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_1_est <- mean(beta_1_GLS)
   
   #Numerical standard errors
-    
-  var_0_num <- var(beta_0_GLS) 
-  var_1_num <- var(beta_1_GLS)
-  
-  stdvs_0_num <- sqrt(var_0_num)
-  stdvs_1_num <- sqrt(var_1_num)
+
+  stdvs_0_num <- sd(beta_0_GLS)
+  stdvs_1_num <- sd(beta_1_GLS)
   
   #analytical standard errors
   
