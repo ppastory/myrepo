@@ -74,14 +74,12 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #initialising the vector
   X_bar <- rep(0,repl)
   X_var  <- rep(0,repl)
-
   y_bar <- rep(0,repl)
   
   #initialising the parameters value
   b_0 <- 10
   b_1 <- 1
-  sigma2 <- 1
-  alpha <- 4
+  
   #draw only once the X from a normal distribution
   #X is fixed over repeated samples
   xsim <- rnorm(T,0,1)
@@ -89,13 +87,17 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   X <- as.matrix(cbind(Cnst=1,xsim))
   #let's put the beta in matrix form
   beta <- as.matrix(rbind(b_0,b_1))
+  
   #let's get some errors
-  e <- rnorm(T,0,sigma2)
+  #sigma2 is 1
+  sigma2 <- 1
+  alpha <- 4
+  #create the vector of errors
+  e <- rnorm(T,0,sigma2*xsim^alpha)
   
   #now I can have my y !
   Y <- X%*%beta + e
 
-  
   #I am initialising the vectors in which beta and other stuff will arrive
   beta_0_0LS <- rep(0,repl)
   beta_1_OLS <- rep(0,repl)
@@ -115,7 +117,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2)
+      e <- rnorm(T,0,sigma2*xsim^alpha)
       #now I can have my y !
       Y <- X%*%beta + e
       
@@ -124,9 +126,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       beta_0_0LS[i] <- OLS_out$estimation[1,1]
       beta_1_OLS[i] <- OLS_out$estimation[2,1]
-      
-     #stdvs_0[i] <- OLS_out$estimation[1,2]/sqrt(T)
-     #stdvs_1[i] <- OLS_out$estimation[2,2]/sqrt(T)
+    
       
       stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
       stdvs_1[i] <- OLS_out$estimation[2,2]
@@ -139,67 +139,79 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0_0LS)
-  beta_1_bar <- mean(beta_1_OLS)
+  beta_0_est <- mean(beta_0_0LS)
+  beta_1_est <- mean(beta_1_OLS)
 
-  #let's get the numerical standard errors -> truuuue
+  #Numerical Standard errors
+  
   var_0_num <- var(beta_0_0LS)
   var_1_num <- var(beta_1_OLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
-  #Let get analytical std dev, on a SMALL sample -> truuue
-  OLS_std <- OLS_own(Y,X,0)
-  stdvs_0_ana <- OLS_std$estimation[1,2]
-  stdvs_1_ana <- OLS_std$estimation[2,2]
+  #Analytical standard errors
+  
+  x<-X
+  xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+  var_01_ana  <- sigma2*(xxi)
+  
+  var_0_ana <- var_01_ana[1,1]
+  var_1_ana <- var_01_ana[2,2]
+  
+  #the diagonal elements are the std of Betas
+  stdvs_0_ana <- sqrt(var_01_ana[1,1])
+  stdvs_1_ana <- sqrt(var_01_ana[2,2])
   
 
-  stdvs_0_bar <- mean(stdvs_0)
-  stdvs_1_bar <- mean(stdvs_1)
+  stdvs_0_est <- mean(stdvs_0)
+  stdvs_1_est <- mean(stdvs_1)
   
  
   #first row of OLS
-  table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
+  table_beta0 <- cbind(b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est)
   colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
   
   #first row of OLS
-  table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
+  table_beta1 <- cbind(b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est)
   colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
   
 
   
+  ###
+  #C Compute size and power
+  ###
+  
   #loop over the t-tests and give me the Critical values for each one
+  colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
-  #let's do a matrix of critical values
+  #let's do a matrix of critical values, alpha is 5%
+  #the t statistics follows a student t with 2 degrees of freedom 
   
-  CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
-  CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
+  CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
   
-  #
-  
-  rej_function <- function(ttest,LB,UB){
-    if (ttest <= LB || ttest >= UB){
+  rej_function <- function(ttest,cv){
+    if (abs(ttest) > cv){
       return(1)
     }else{
       return(0)
     }
   }
   
+  
   #initialise matrix of rejection 
   rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
   #Lets store the 1 and 0 of rejection in a matrix
   for (j in 1:5){
-    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
   }
-  #this is the size, the mean of column 1 for which beta =1
+  #this is the size, the mean of column 1 for which beta = 1
   size_beta1 <- mean(rej_matrix[,1])
-  #size_beta1
+  #there is a size bias if the critical values are wrong !
   
   #the power is P(non reject if Beta != 1) -> 1 - P(reject)
   power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
   #power_beta1
-  
   
   #Store the result for OLS
   #table with size and power
@@ -211,6 +223,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #table beta1
   beta_1_mat[1,] <-table_beta1
+  
+  #here OLS std_ana won't be consistent 
 
   ################################################
   ####Let's start with OLS White correction ######
@@ -236,7 +250,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2)
+      e <- rnorm(T,0,sigma2*xsim^alpha)
       #now I can have my y !
       Y <- X%*%beta + e
       
@@ -249,7 +263,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       stdvs_0[i] <- OLS_out[1,2]
       stdvs_1[i] <- OLS_out[2,2]
       
-      ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] 
     }
     
   }
@@ -257,54 +271,68 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0_OLSW)
-  beta_1_bar <- mean(beta_1_OLSW)
+  beta_0_est <- mean(beta_0_OLSW)
+  beta_1_est <- mean(beta_1_OLSW)
 
-    #let's get the numerical standard errors -> truuuue
+  #Numerical Standard errors
   
-  var_0_num <- var(beta_0_OLSW) ##divide by T
+  var_0_num <- var(beta_0_OLSW) 
   var_1_num <- var(beta_1_OLSW)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
-  #Let get analytical std dev, on a SMALL sample -> truuue
+  #Analytical Standard errors
+  
   OLS_std <- OLS_own(Y,X,1)
   stdvs_0_ana <- OLS_std[1,2]
   stdvs_1_ana <- OLS_std[2,2]
   
   
-  stdvs_0_bar <- mean(stdvs_0)
-  stdvs_1_bar <- mean(stdvs_1)
+  stdvs_0_est <- mean(stdvs_0)
+  stdvs_1_est <- mean(stdvs_1)
   
   
   #second row of OLSW
-  table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
+  table_beta0 <- cbind(b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est)
   colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
   
   #second row of OLSW
-  table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
+  table_beta1 <- cbind(b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est)
   colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
   
   
   
+  ###
+  #C Compute size and power
+  ###
+  
   #loop over the t-tests and give me the Critical values for each one
+  colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
-  #let's do a matrix of critical values
+  #let's do a matrix of critical values, alpha is 5%
+  #the t statistics follows a student t with 2 degrees of freedom 
   
-  CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
-  CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
-
+  CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
+  
+  rej_function <- function(ttest,cv){
+    if (abs(ttest) > cv){
+      return(1)
+    }else{
+      return(0)
+    }
+  }
+  
   
   #initialise matrix of rejection 
   rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
   #Lets store the 1 and 0 of rejection in a matrix
   for (j in 1:5){
-    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
   }
-  #this is the size, the mean of column 1 for which beta =1
+  #this is the size, the mean of column 1 for which beta = 1
   size_beta1 <- mean(rej_matrix[,1])
-  #size_beta1
+  #there is a size bias if the critical values are wrong !
   
   #the power is P(non reject if Beta != 1) -> 1 - P(reject)
   power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
@@ -322,6 +350,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #table beta1
   beta_1_mat[2,] <-table_beta1
   
+  #Here the white correction will correct for heteroskedasticty 
+  #and we will have a consistent estimator
   
   
   ################################################
@@ -348,22 +378,18 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2)
+      e <- rnorm(T,0,sigma2*xsim^alpha)
       #now I can have my y !
       Y <- X%*%beta + e
       
-      OLS_out <- OLS_own(Y,X,0) 
-      
-      res <- OLS_out$residuals
-      
-      ### I compute Omega outside of the function
-      res2<- res%*%t(res)
       #the non-diagnonal elemets of res2 need to have 0
       #I take away the diagonals
-      diagonal <- diag(res2) 
+      
+      #With GLS I can use the assumption of alpha and sigma2
+      diagonal <- sigma2*xsim^alpha 
       #I create a matrix of 0 of dimension of Res2
       
-      omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
+      omega_1 <- matrix(0,T, T) 
       #the diagonal is 1/sigma_n^2
       diag(omega_1) <- 1/diagonal
       
@@ -385,91 +411,92 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0_GLS)
-  beta_1_bar <- mean(beta_1_GLS)
+  beta_0_est <- mean(beta_0_GLS)
+  beta_1_est <- mean(beta_1_GLS)
   
-  #let's get the numerical standard errors -> truuuue
-  
-  var_0_num <- var(beta_0_GLS) ##divide by T
+  #Numerical standard errors
+    
+  var_0_num <- var(beta_0_GLS) 
   var_1_num <- var(beta_1_GLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
-  #Let get analytical std dev, on a SMALL sample -> truuue
-  e <- rnorm(T,0,sigma2)
+  #analytical standard errors
+  
+  e <- rnorm(T,0,sigma2*xsim^alpha)
   #now I can have my y !
   Y <- X%*%beta + e
-  OLS_std <- OLS_own(Y,X,0)
-  res <- OLS_out$residuals
-  n  <- length(y)
-  k  <- ncol(x)
-  df <- n-k
-  sigma2 <- as.vector(t(res)%*%res/df)
   
-  ### I compute Omega outside of the funciton
-  
-  res2       <- res%*%t(res)
-  #the non-diagnonal elemets of res2 need to have 0
-  #I take away the diagonals
-  diagonal <- diag(res2) 
+  #With GLS I can use the assumption of alpha and sigma2
+  diagonal <- sigma2*xsim^alpha 
   #I create a matrix of 0 of dimension of Res2
   
-  omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
-  #
+  omega_1 <- matrix(0,T,T) 
+  #the diagonal is 1/sigma_n^2
   diag(omega_1) <- 1/diagonal
   
-  GLS_static = GLS_own(Y,X,omega_1)
+  x <- X
+  var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
   
-  stdvs_0_ana <- GLS_static[1,2]
-  stdvs_1_ana <- GLS_static[2,2]
+  
+  var_0_ana <- var_01_ana[1,1]
+  var_1_ana <- var_01_ana[2,2]
+  
+  #the diagonal elements are the std of Betas
+  stdvs_0_ana <- sqrt(var_01_ana[1,1])
+  stdvs_1_ana <- sqrt(var_01_ana[2,2])
+  
   
   #estimated standard errors
-  stdvs_0_bar <- mean(stdvs_0)
-  stdvs_1_bar <- mean(stdvs_1)
+  stdvs_0_est <- mean(stdvs_0)
+  stdvs_1_est <- mean(stdvs_1)
   
   
   #Row of estimation
-  table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
+  table_beta0 <- cbind(b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est)
   colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
   
-  #first row of OLS
-  table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
+
+  table_beta1 <- cbind(b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est)
   colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
   
   
   
+  ###
+  #C Compute size and power
+  ###
+  
   #loop over the t-tests and give me the Critical values for each one
+  colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
-  #let's do a matrix of critical values
+  #let's do a matrix of critical values, alpha is 5%
+  #the t statistics follows a student t with 2 degrees of freedom 
   
-  CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
-  CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
+  CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
   
-  #
-  
-  rej_function <- function(ttest,LB,UB){
-    if (ttest <= LB || ttest >= UB){
+  rej_function <- function(ttest,cv){
+    if (abs(ttest) > cv){
       return(1)
     }else{
       return(0)
     }
   }
   
+  
   #initialise matrix of rejection 
   rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
   #Lets store the 1 and 0 of rejection in a matrix
   for (j in 1:5){
-    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
   }
-  #this is the size, the mean of column 1 for which beta =1
+  #this is the size, the mean of column 1 for which beta = 1
   size_beta1 <- mean(rej_matrix[,1])
-  #size_beta1
+  #there is a size bias if the critical values are wrong !
   
   #the power is P(non reject if Beta != 1) -> 1 - P(reject)
   power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
   #power_beta1
-  
   
   #Store the result for OLS with White
   #table with size and power
@@ -508,7 +535,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2)
+      e <- rnorm(T,0,sigma2*xsim^alpha)
       #now I can have my y !
       Y <- X%*%beta + e
       
@@ -517,31 +544,28 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       n  <- length(Y)
       k  <- ncol(X)
-
+      
       OLS_out <- OLS_own(Y,X,0) 
       
       res <- OLS_out$residuals
-      #I know that sigma2 is 1 and alpha is 4
-      #so the coefficients are ln(1) = 0 and 4
-      coef <- as.matrix(rbind(0,4))
-      
       #I take absolute value in log because otherwise taking log(X) does not work
-      x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
-
-      ## predict the sigma_hat based on these coefficients
-      #But I am actually predicting ln(sigma_hat)
-      sigma_hat   <- as.vector(x%*%coef)
-      #So I need to take the exponent
-      sigma_hat <- exp(sigma_hat)
+      #for teacher no need to take log(X)
+      x <- as.matrix(cbind(Cnst=1,X[,2]))
+      y <- log(diag(res%*%t(res)))
       
-      #Sigma_hat is the diagonal is the other specification
+      ## Run OLS
+      xy     <- t(x)%*%y #indeed I need some kind of X_i
+      xxi    <- solve(t(x)%*%x)
+      coefs  <- as.vector(xxi%*%xy)
+      sigma_hat   <- as.vector(x%*%coefs)
       
+      #for teacher sigma_hat is ok
+      #sigma_hat <- exp(sigma_hat)
       #now we create the matrix and put sigma_hat as the diagonal of that matrix
       
       omega_hat <- matrix(0,length(res), length(res)) 
-      
-      #I put back the diagonal element in the diagonals
-      diag(omega_hat) <- 1/sigma_hat
+      #I put back the diagonal element in the diagnonals
+      diag(omega_hat) <- sigma_hat
       
       GLS_static = GLS_own (Y,X,omega_hat)
       
@@ -552,7 +576,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       stdvs_0[i] <- GLS_static[1,2]
       stdvs_1[i] <- GLS_static[2,2]
       
-      ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] #divided by sqrt T
+      ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
   }
@@ -560,81 +584,93 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
   
-  beta_0_bar <- mean(beta_0_EGLS)
-  beta_1_bar <- mean(beta_1_EGLS)
+  beta_0_est <- mean(beta_0_EGLS)
+  beta_1_est <- mean(beta_1_EGLS)
   
-  #let's get the numerical standard errors -> truuuue
-  
-  var_0_num <- var(beta_0_EGLS)##divide by T
+  #Numerical standard errors
+    
+  var_0_num <- var(beta_0_EGLS)
   var_1_num <- var(beta_1_EGLS)
   
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
+
+  #Analytical standard errors  
+
+  #For EGLS, we assume that Var(miu_{i,t}) is sigma_i^2
   
-  #Let get analytical std dev, on a SMALL sample -> truuue
-  res <- OLS_own(Y,X,0)$residuals
+  n  <- length(Y)
+  k  <- ncol(X)
   
-  #I know that sigma2 is 1 and alpha is 4
-  #so the coefficients are ln(1) = 0 and 4
-  coef <- as.matrix(rbind(0,4))
+  OLS_out <- OLS_own(Y,X,0) 
   
+  res <- OLS_out$residuals
   #I take absolute value in log because otherwise taking log(X) does not work
-  x <- as.matrix(cbind(Cnst=1,log(abs(X[,2]))))
+  #for teacher no need to take log(X)
+  x <- as.matrix(cbind(Cnst=1,X[,2]))
+  y <- log(diag(res%*%t(res)))
   
-  ## predict the sigma_hat based on these coefficients
-  #But I am actually predicting ln(sigma_hat)
-  sigma_hat   <- as.vector(x%*%coef)
-  #So I need to take the exponent
-  sigma_hat <- exp(sigma_hat)
+  ## Run OLS
+  xy     <- t(x)%*%y #indeed I need some kind of X_i
+  xxi    <- solve(t(x)%*%x)
+  coefs  <- as.vector(xxi%*%xy)
+  sigma_hat   <- as.vector(x%*%coefs)
   
-  #Sigma_hat is the diagonal is the other specification
-  
+  #for teacher sigma_hat is ok
+  #sigma_hat <- exp(sigma_hat)
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
-  
-  #I put back the diagonal element in the diagonals
-  diag(omega_hat) <- 1/sigma_hat
+  #I put back the diagonal element in the diagnonals
+  diag(omega_hat) <- sigma_hat
   
   GLS_static = GLS_own (Y,X,omega_hat)
-  
-  
-  beta_0_EGLS[i] <- GLS_static[1,1]
-  beta_1_EGLS[i] <- GLS_static[2,1]
-  
-  stdvs_0_ana[i] <- GLS_static[1,2]
-  stdvs_1_ana[i] <- GLS_static[2,2]
+
+  stdvs_0[i] <- GLS_static[1,2]
+  stdvs_1[i] <- GLS_static[2,2]
   
   #estimated standard errors
-  stdvs_0_bar <- mean(stdvs_0)
-  stdvs_1_bar <- mean(stdvs_1)
+  stdvs_0_est <- mean(stdvs_0)
+  stdvs_1_est <- mean(stdvs_1)
   
   
   #Row of estimation
-  table_beta0 <- cbind(b_0,beta_0_bar,stdvs_0_ana,stdvs_0_num,stdvs_0_bar)
+  table_beta0 <- cbind(b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est)
   colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
   
   #first row of OLS
-  table_beta1 <- cbind(b_1,beta_1_bar,stdvs_1_ana,stdvs_1_num,stdvs_1_bar)
+  table_beta1 <- cbind(b_1,beta_1_est,stdvs_1_ana,stdvs_1_num,stdvs_1_est)
   colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
   
   
   
+  ###
+  #C Compute size and power
+  ###
+  
   #loop over the t-tests and give me the Critical values for each one
+  colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
-  #let's do a matrix of critical values
+  #let's do a matrix of critical values, alpha is 5%
+  #the t statistics follows a student t with 2 degrees of freedom 
   
-  CV_beta1_LB <- quantile(ttest_matrix[,1], c(.025))
-  CV_beta1_UB <- quantile(ttest_matrix[,1], c(.975))
+  CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
   
+  rej_function <- function(ttest,cv){
+    if (abs(ttest) > cv){
+      return(1)
+    }else{
+      return(0)
+    }
+  }
   
   #initialise matrix of rejection 
   rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
   #Lets store the 1 and 0 of rejection in a matrix
   for (j in 1:5){
-    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, LB= CV_beta1_LB,UB= CV_beta1_UB)
+    rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
   }
-  #this is the size, the mean of column 1 for which beta =1
+  #this is the size, the mean of column 1 for which beta = 1
   size_beta1 <- mean(rej_matrix[,1])
   #size_beta1
   
