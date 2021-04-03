@@ -68,7 +68,7 @@ for (T in sz){
   iter <- iter + 1
   
 #repl number of replication
-repl <- 2000 #small replication to check
+repl <- 10000 #small replication to check
 #df is the number of degrees of freedom
 df <- 1
 
@@ -157,9 +157,6 @@ beta_1_est <- mean(beta_1)
 #B.1 Use an analytical formula
 ###
 
-#OLS_std <- OLS_own(Y,X,0)
-#stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
-#stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
 
 x<-X
 xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
@@ -213,7 +210,7 @@ colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 #let's do a matrix of critical values, alpha is 5%
 #the t statistics follows a student t with 2 degrees of freedom 
 
-CV_beta1 <- qt(p=.05, df=2, lower.tail=FALSE)
+CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
 
 rej_function <- function(ttest,cv){
   if (abs(ttest) > cv){
@@ -248,8 +245,4 @@ table_final_sp[iter,] <- cbind(T,size_beta1,t(power_beta1))
 
 }
 
-
-##################################
-###### With x stochastic #########
-##################################
 
