@@ -68,7 +68,7 @@ for (T in sz){
   iter <- iter + 1
   
 #repl number of replication
-repl <- 10000 #small replication to check
+repl <- 2000 #small replication to check
 #df is the number of degrees of freedom
 df <- 1
 
@@ -157,27 +157,23 @@ beta_1_est <- mean(beta_1)
 #B.1 Use an analytical formula
 ###
 
-#Let get analytical std dev, on a SMALL sample -> truuue
-OLS_std <- OLS_own(Y,X,0)
-stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
-stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
-
+#OLS_std <- OLS_own(Y,X,0)
+#stdvs_0_ana <- OLS_std$estimation[1,2]/sqrt(T) 
+#stdvs_1_ana <- OLS_std$estimation[2,2]/sqrt(T)
 
 x<-X
 xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
 var_01_ana  <- sigma2*(xxi)
-var_01_vec <- diag(var_01_ana)
+#the diagonal elements are the std of Betas
+std_0_ana <- sqrt(var_01_ana[1,1])
+std_1_ana <- sqrt(var_01_ana[2,2])
 
-var_0_ana <- var_01_ana[1]
-var_1_ana <- var_01_ana[2]
+###
+#B.2 Numerical Beta
+###
 
-stdvs_1_ana_test <- sqrt(var_1_ana)
-
-
-
-
-var_0_num <- var(beta_0)/T ##divide by T?
-var_1_num <- var(beta_1)/T
+var_0_num <- var(beta_0)
+var_1_num <- var(beta_1)
 
 stdvs_0_num <- sqrt(var_0_num)
 stdvs_1_num <- sqrt(var_1_num)
