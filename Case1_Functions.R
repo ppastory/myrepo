@@ -83,8 +83,6 @@ OLS_own = function (y,x,w)
 }  
   
   GLS_own = function (y,x,o) 
-    
-    
   {
     #x is the matrix of determinants
     #y is the matrix of dependent variables
