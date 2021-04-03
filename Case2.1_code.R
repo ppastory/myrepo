@@ -164,9 +164,13 @@ beta_1_est <- mean(beta_1)
 x<-X
 xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
 var_01_ana  <- sigma2*(xxi)
+
+var_0_ana <- var_01_ana[1,1]
+var_1_ana <- var_01_ana[2,2]
+
 #the diagonal elements are the std of Betas
-std_0_ana <- sqrt(var_01_ana[1,1])
-std_1_ana <- sqrt(var_01_ana[2,2])
+stdvs_0_ana <- sqrt(var_01_ana[1,1])
+stdvs_1_ana <- sqrt(var_01_ana[2,2])
 
 ###
 #B.2 Numerical Beta
