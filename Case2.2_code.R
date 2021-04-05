@@ -41,11 +41,11 @@ source("Case1_Functions.R")
 #Setting the seeds so that the simulation gives us the same results
 set.seed(123)
 
-#we assume we have a ok sample
-T <- 200
+#we assume we have sample of reasonable size
+T <- 1000
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
+repl <- 10000 #less number of replication to work on the code
 
 #df is the number of degrees of freedom, always n-k!
 #df <- n-k
@@ -133,7 +133,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
-    
+    print(mean(stdvs_0))
   }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
@@ -224,7 +224,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #table beta1
   beta_1_mat[1,] <-table_beta1
   
-  #here OLS std_ana won't be consistent 
+  #here OLS standard errors will be biased and inconsistent
 
   ################################################
   ####Let's start with OLS White correction ######
@@ -282,7 +282,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
-  #Analytical Standard errors
+  #Analytical Standard errors #careful here I don't assum sigma2 =1 !!
   
   OLS_std <- OLS_own(Y,X,1)
   stdvs_0_ana <- OLS_std[1,2]
@@ -351,7 +351,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_1_mat[2,] <-table_beta1
   
   #Here the white correction will correct for heteroskedasticty 
-  #and we will have a consistent estimator
+  #standard erros will be biased by consistent
   
   
   ################################################
@@ -382,37 +382,32 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       #now I can have my y !
       Y <- X%*%beta + e
       
+      OLS_out <- OLS_own(Y,X,0) 
+      
+      res <- OLS_out$residuals
+      
+      ### I observe the variance!
+      res2       <- res%*%t(res)
       #the non-diagnonal elemets of res2 need to have 0
       #I take away the diagonals
+      diagonal <- diag(res2) 
       
       #With GLS I can use the assumption of alpha and sigma2
-      diagonal <- sigma2*xsim^alpha 
+      #diagonal <- sigma2*xsim^alpha 
       #I create a matrix of 0 of dimension of Res2
       
       omega_1 <- matrix(0,T,T) 
       #the diagonal is 1/sigma_n^2
       diag(omega_1) <- 1/diagonal
       
-      #I need to do it by end because the formula computes a different sigma2 
-      #than the one we are supposed to assume
-      x <- X
-      
-      var_01_MC   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
-      
-      
-      var_0_MC <- var_01_MC[1,1]
-      var_1_MC <- var_01_MC[2,2]
-      
-      #the diagonal elements are the std of Betas
-      stdvs_0[i] <- sqrt(var_01_MC[1,1])
-      stdvs_1[i] <- sqrt(var_01_MC[2,2])
-      
-      
       GLS_static = GLS_own(Y,X,omega_1)
       
       
       beta_0_GLS[i] <- GLS_static[1,1]
       beta_1_GLS[i] <- GLS_static[2,1]
+      
+      stdvs_0[i] <- GLS_static[1,2]
+      stdvs_1[i] <- GLS_static[2,2]
       
       ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] 
     }
@@ -437,26 +432,44 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   Y <- X%*%beta + e
   
   #With GLS I can use the assumption of alpha and sigma2
-  diagonal <- sigma2*xsim^alpha 
+  #diagonal <- sigma2*xsim^alpha 
   #I create a matrix of 0 of dimension of Res2
+  
+  OLS_out <- OLS_own(Y,X,0) 
+  
+  res <- OLS_out$residuals
+  
+  ### I compute Omega outside of the funciton
+  res2       <- res%*%t(res)
+  #the non-diagnonal elemets of res2 need to have 0
+  #I take away the diagonals
+  diagonal <- diag(res2)
+  
   
   omega_1 <- matrix(0,T,T) 
   #the diagonal is 1/sigma_n^2
   diag(omega_1) <- 1/diagonal
   
-  x <- X
-  var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
+  #accept the sigma2 of the function
+  GLS_static = GLS_own(Y,X,omega_1)
   
+  stdvs_0_ana <- GLS_static[1,2]
+  stdvs_1_ana <- GLS_static[2,2]
   
-  var_0_ana <- var_01_ana[1,1]
-  var_1_ana <- var_01_ana[2,2]
-  
-  #the diagonal elements are the std of Betas
-  stdvs_0_ana <- sqrt(var_01_ana[1,1])
-  stdvs_1_ana <- sqrt(var_01_ana[2,2])
-  
-  
-  #estimated standard errors
+  #Choose sigma2 =1
+  #x <- X
+  #var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
+  ##
+  ##
+  #var_0_ana <- var_01_ana[1,1]
+  #var_1_ana <- var_01_ana[2,2]
+  ##
+  ###the diagonal elements are the std of Betas
+  #stdvs_0_ana <- sqrt(var_01_ana[1,1])
+  #stdvs_1_ana <- sqrt(var_01_ana[2,2])
+  #
+  #
+  ##estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
   stdvs_1_est <- mean(stdvs_1)
   
@@ -558,8 +571,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       res <- OLS_out$residuals
       #I take absolute value in log because otherwise taking log(X) does not work
       #for teacher no need to take log(X)
+      #the constant is 0 because we linearilise the column of 1 (ln(1)=0)
       x <- as.matrix(cbind(Cnst=1,X[,2]))
-      y <- log(diag(res%*%t(res)))
+      y <- log(res^2)
       
       ## Run OLS
       xy     <- t(x)%*%y #indeed I need some kind of X_i
@@ -573,7 +587,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       omega_hat <- matrix(0,length(res), length(res)) 
       #I put back the diagonal element in the diagnonals
-      diag(omega_hat) <- sigma_hat
+      #I take absolute value to have positive values 
+      diag(omega_hat) <- 1/abs(sigma_hat)
       
       GLS_static = GLS_own (Y,X,omega_hat)
       
@@ -605,8 +620,6 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   #Analytical standard errors  
 
-  #For EGLS, we assume that Var(miu_{i,t}) is sigma_i^2
-  
   n  <- length(Y)
   k  <- ncol(X)
   
@@ -616,7 +629,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #I take absolute value in log because otherwise taking log(X) does not work
   #for teacher no need to take log(X)
   x <- as.matrix(cbind(Cnst=1,X[,2]))
-  y <- log(diag(res%*%t(res)))
+  y <- log(res^2)
   
   ## Run OLS
   xy     <- t(x)%*%y #indeed I need some kind of X_i
@@ -630,12 +643,27 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   omega_hat <- matrix(0,length(res), length(res)) 
   #I put back the diagonal element in the diagnonals
-  diag(omega_hat) <- sigma_hat
+  #I take absolute value to only have positive sigma_hat
+  diag(omega_hat) <- 1/abs(sigma_hat)
   
   GLS_static = GLS_own (Y,X,omega_hat)
-
-  stdvs_0[i] <- GLS_static[1,2]
-  stdvs_1[i] <- GLS_static[2,2]
+  
+  stdvs_0_ana <- GLS_static[1,2]
+  stdvs_1_ana <- GLS_static[2,2]
+  
+  #I need to do it by hand because the formula computes a different sigma2 
+  ##than the one we are supposed to assume
+  #x <- X
+  #
+  #var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
+  #
+  #
+  #var_0_MC <- var_01_MC[1,1]
+  #var_1_MC <- var_01_MC[2,2]
+  #
+  ##the diagonal elements are the std of Betas
+  #stdvs_0_ana <- sqrt(var_01_MC[1,1])
+  #stdvs_1_ana <- sqrt(var_01_MC[2,2])
   
   #estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
