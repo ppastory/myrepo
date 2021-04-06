@@ -42,13 +42,11 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 1000
+T <- 2500
 
 #repl number of replication
-repl <- 10000 #less number of replication to work on the code
+repl <- 5000 #less number of replication to work on the code
 
-#df is the number of degrees of freedom, always n-k!
-#df <- n-k
 
 ############################################
 ######### Initialise Matrix ################
@@ -151,6 +149,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_1_num <- sqrt(var_1_num)
   
   #Analytical standard errors
+  
+  res <- OLS_own(Y,X,0)$residuals
+  n  <- length(Y)
+  k  <- ncol(X)
+  df <- n-k
+  sigma2 <- as.vector(t(res)%*%res/df)
+  
+  #sigma2 <- 1
   
   x<-X
   xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
@@ -259,6 +265,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       beta_0_OLSW[i] <- OLS_out[1,1]
       beta_1_OLSW[i] <- OLS_out[2,1]
+      
       
       stdvs_0[i] <- OLS_out[1,2]
       stdvs_1[i] <- OLS_out[2,2]
