@@ -636,15 +636,20 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   #Analytical standard errors  
 
-  n  <- length(Y)
-  k  <- ncol(X)
+  e <- rnorm(T,0,sigma2*xsim^alpha)
+  #now I can have my y !
+  Y <- X%*%beta + e
   
   OLS_out <- OLS_own(Y,X,0) 
   
   res <- OLS_out$residuals
   #I take absolute value in log because otherwise taking log(X) does not work
+  #Do the x so that we have alpha ln(x)
+  #x <- as.matrix(cbind(Cnst=1,log(abs(xsim))))
+  
   #for teacher no need to take log(X)
-  x <- as.matrix(cbind(Cnst=1,X[,2]))
+  x <- X
+
   y <- log(res^2)
   
   ## Run OLS
@@ -654,32 +659,33 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   sigma_hat   <- as.vector(x%*%coefs)
   
   #for teacher sigma_hat is ok
-  #sigma_hat <- exp(sigma_hat)
+  sigma_hat <- exp(sigma_hat)
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
   #I put back the diagonal element in the diagnonals
   #I take absolute value to only have positive sigma_hat
-  diag(omega_hat) <- 1/abs(sigma_hat)
+  diag(omega_hat) <- 1/sigma_hat
   
   GLS_static = GLS_own (Y,X,omega_hat)
-  
+  #
   stdvs_0_ana <- GLS_static[1,2]
   stdvs_1_ana <- GLS_static[2,2]
   
   #I need to do it by hand because the formula computes a different sigma2 
-  ##than the one we are supposed to assume
-  #x <- X
-  #
-  #var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
-  #
-  #
-  #var_0_MC <- var_01_MC[1,1]
-  #var_1_MC <- var_01_MC[2,2]
-  #
-  ##the diagonal elements are the std of Betas
-  #stdvs_0_ana <- sqrt(var_01_MC[1,1])
-  #stdvs_1_ana <- sqrt(var_01_MC[2,2])
+  #than the one we are supposed to assume
+  x <- X
+  
+  
+  var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
+  
+  
+  var_0_MC <- var_01_MC[1,1]
+  var_1_MC <- var_01_MC[2,2]
+  
+  #the diagonal elements are the std of Betas
+  stdvs_0_ana <- sqrt(var_01_MC[1,1])
+  stdvs_1_ana <- sqrt(var_01_MC[2,2])
   
   #estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
