@@ -45,7 +45,7 @@ set.seed(123)
 T <- 2500
 
 #repl number of replication
-repl <- 5000 #less number of replication to work on the code
+repl <- 1000 #less number of replication to work on the code
 
 
 ############################################
@@ -156,8 +156,6 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   df <- n-k
   sigma2 <- as.vector(t(res)%*%res/df)
   
-  #sigma2 <- 1
-  
   x<-X
   xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
   var_01_ana  <- sigma2*(xxi)
@@ -232,6 +230,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #here OLS standard errors will be biased and inconsistent
 
+  OLS_out <- OLS_own(Y,X,1) 
+  
+  
+  beta_0_OLSW[i] <- OLS_out[1,1]
+  
+  
+  
   ################################################
   ####Let's start with OLS White correction ######
   ################################################
@@ -242,6 +247,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_1_OLSW <- rep(0,repl)
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
+  sigma2 <- 1
   
   #grid of beta1 
   beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
@@ -358,7 +364,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_1_mat[2,] <-table_beta1
   
   #Here the white correction will correct for heteroskedasticty 
-  #standard erros will be biased by consistent
+  #standard errors will be biased by consistent
   
   
   ################################################
@@ -445,13 +451,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   OLS_out <- OLS_own(Y,X,0) 
   
   res <- OLS_out$residuals
-  
-  ### I compute Omega outside of the funciton
   res2       <- res%*%t(res)
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
-  diagonal <- diag(res2)
-  
+  diagonal <- diag(res2) 
+  #I create a matrix of 0 of diam
+  res2 <- matrix(0,nrow(res2), ncol(res2)) 
+  #I put back the diagonal element in the diagnonals
+  diag(res2) <- diagonal
   
   omega_1 <- matrix(0,T,T) 
   #the diagonal is 1/sigma_n^2
@@ -459,19 +466,21 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #accept the sigma2 of the function
   GLS_static = GLS_own(Y,X,omega_1)
-  
+  #
   stdvs_0_ana <- GLS_static[1,2]
   stdvs_1_ana <- GLS_static[2,2]
-  
+  #
   #Choose sigma2 =1
+  #sigma2 =1
+  #
   #x <- X
   #var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
-  ##
-  ##
+  ###
+  ###
   #var_0_ana <- var_01_ana[1,1]
   #var_1_ana <- var_01_ana[2,2]
-  ##
-  ###the diagonal elements are the std of Betas
+  ###
+  ####the diagonal elements are the std of Betas
   #stdvs_0_ana <- sqrt(var_01_ana[1,1])
   #stdvs_1_ana <- sqrt(var_01_ana[2,2])
   #
@@ -578,8 +587,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       res <- OLS_out$residuals
       #I take absolute value in log because otherwise taking log(X) does not work
       #for teacher no need to take log(X)
-      #the constant is 0 because we linearilise the column of 1 (ln(1)=0)
-      x <- as.matrix(cbind(Cnst=1,X[,2]))
+      x <- X
       y <- log(res^2)
       
       ## Run OLS
@@ -589,13 +597,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       sigma_hat   <- as.vector(x%*%coefs)
       
       #for teacher sigma_hat is ok
-      #sigma_hat <- exp(sigma_hat)
-      #now we create the matrix and put sigma_hat as the diagonal of that matrix
+      #But we think we need to get the initial sigma_hat to get the variance
+      sigma_hat <- exp(sigma_hat)
       
+      #now we create the matrix and put sigma_hat as the diagonal of that matrix
       omega_hat <- matrix(0,length(res), length(res)) 
       #I put back the diagonal element in the diagnonals
       #I take absolute value to have positive values 
-      diag(omega_hat) <- 1/abs(sigma_hat)
+      diag(omega_hat) <- 1/sigma_hat
       
       GLS_static = GLS_own (Y,X,omega_hat)
       
@@ -737,6 +746,9 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #coincide. In all cases, we correct for small (dividing by sqrt of T) so it really
   #should be the same.
   #example of beta_1
+  
+  #EGLS is consistent but biased
+  #as N goes big -> the variance of EGLS is smaller than OLS
   
   beta_1_mat[,3:4]
   
