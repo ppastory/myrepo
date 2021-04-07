@@ -99,8 +99,9 @@ OLS_own = function (y,x,w)
     
     yhat   <- as.vector(x%*%coefs)
     res    <- y-yhat
-    sigma2 <- as.vector(t(res)%*%res/df)
-
+    #sigma2 <- as.vector(t(res)%*%res/df)
+    sigma2 <- as.vector(t(res)%*%res)
+    
     #use the input omega
     omega_1 <- o
     
