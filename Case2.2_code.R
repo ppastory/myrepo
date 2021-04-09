@@ -45,7 +45,7 @@ set.seed(123)
 T <- 2500
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
+repl <- 10000 #less number of replication to work on the code
 
 
 ############################################
@@ -635,7 +635,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_1_num <- sqrt(var_1_num)
 
   #Analytical standard errors  
-
+  sigma2 <- 1
   e <- rnorm(T,0,sigma2*xsim^alpha)
   #now I can have my y !
   Y <- X%*%beta + e
@@ -645,47 +645,54 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   res <- OLS_out$residuals
   #I take absolute value in log because otherwise taking log(X) does not work
   #Do the x so that we have alpha ln(x)
-  #x <- as.matrix(cbind(Cnst=1,log(abs(xsim))))
+  x <- as.matrix(cbind(Cnst=1,log(abs(xsim^alpha))))
   
+  res2<- res%*%t(res)
+  #the non-diagnonal elemets of res2 need to have 0
+  #I take away the diagonals
   #for teacher no need to take log(X)
-  x <- X
+  #x <- X
 
-  y <- log(res^2)
+  y <- log(diag(res2))
   
   ## Run OLS
   xy     <- t(x)%*%y #indeed I need some kind of X_i
   xxi    <- solve(t(x)%*%x)
   coefs  <- as.vector(xxi%*%xy)
   sigma_hat   <- as.vector(x%*%coefs)
-  
   #for teacher sigma_hat is ok
   sigma_hat <- exp(sigma_hat)
+  
+  hist(sigma_hat)
+  
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
   #I put back the diagonal element in the diagnonals
   #I take absolute value to only have positive sigma_hat
   diag(omega_hat) <- 1/sigma_hat
-  
+
   GLS_static = GLS_own (Y,X,omega_hat)
-  #
+ 
   stdvs_0_ana <- GLS_static[1,2]
   stdvs_1_ana <- GLS_static[2,2]
+  stdvs_0_ana
+  stdvs_1_ana
   
   #I need to do it by hand because the formula computes a different sigma2 
   #than the one we are supposed to assume
-  x <- X
-  
-  
-  var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
-  
-  
-  var_0_MC <- var_01_MC[1,1]
-  var_1_MC <- var_01_MC[2,2]
-  
-  #the diagonal elements are the std of Betas
-  stdvs_0_ana <- sqrt(var_01_MC[1,1])
-  stdvs_1_ana <- sqrt(var_01_MC[2,2])
+  #x <- X
+  #
+  #
+  #var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
+  #
+  #
+  #var_0_MC <- var_01_MC[1,1]
+  #var_1_MC <- var_01_MC[2,2]
+  #
+  ##the diagonal elements are the std of Betas
+  #stdvs_0_ana <- sqrt(var_01_MC[1,1])
+  #stdvs_1_ana <- sqrt(var_01_MC[2,2])
   
   #estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
