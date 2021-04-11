@@ -45,7 +45,7 @@ set.seed(123)
 T <- 2500
 
 #repl number of replication
-repl <- 10000 #less number of replication to work on the code
+repl <- 1000 #less number of replication to work on the code
 
 
 ############################################
@@ -240,7 +240,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   ################################################
   ####Let's start with OLS White correction ######
   ################################################
-
+  sigma2 <- 1
 
   #I am initialising the vectors in which beta and other stuff will arrive
   beta_0_OLSW <- rep(0,repl)
@@ -445,7 +445,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   Y <- X%*%beta + e
   
   #With GLS I can use the assumption of alpha and sigma2
-  #diagonal <- sigma2*xsim^alpha 
+  diagonal <- sigma2*xsim^alpha 
   #I create a matrix of 0 of dimension of Res2
   
   OLS_out <- OLS_own(Y,X,0) 
@@ -454,7 +454,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   res2       <- res%*%t(res)
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
-  diagonal <- diag(res2) 
+  #diagonal <- diag(res2) 
   #I create a matrix of 0 of diam
   res2 <- matrix(0,nrow(res2), ncol(res2)) 
   #I put back the diagonal element in the diagnonals
