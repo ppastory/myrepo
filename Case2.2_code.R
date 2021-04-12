@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 2500
+T <- 10000
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
+repl <- 2000 #less number of replication to work on the code
 
 
 ############################################
@@ -110,7 +110,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-  for (j in 1:length(beta1_test)) {
+#  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
@@ -132,7 +132,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     print(mean(stdvs_0))
-  }
+#  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -151,10 +151,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #Analytical standard errors
   
   res <- OLS_own(Y,X,0)$residuals
+  print(t(res)%*%res)
+  print(max(xsim))
   n  <- length(Y)
   k  <- ncol(X)
   df <- n-k
-  sigma2 <- as.vector(t(res)%*%res/df)
+  sigma2 <- as.vector(t(res)%*%res)/df
+  
+  sigma2 <-1
   
   x<-X
   xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
@@ -257,7 +261,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-  for (j in 1:length(beta1_test)) {
+ # for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
@@ -279,7 +283,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] 
     }
     
-  }
+ # }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -364,7 +368,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   beta_1_mat[2,] <-table_beta1
   
   #Here the white correction will correct for heteroskedasticty 
-  #standard errors will be biased by consistent
+  #standard errors will be biased (in small sample) but consistent
+  #it is inefficient -> the GLS standard errors will be smaller
   
   
   ################################################
@@ -386,9 +391,10 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-  for (j in 1:length(beta1_test)) {
+ # for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
+      sigma2 <-1
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
       e <- rnorm(T,0,sigma2*xsim^alpha)
@@ -403,10 +409,18 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       res2       <- res%*%t(res)
       #the non-diagnonal elemets of res2 need to have 0
       #I take away the diagonals
-      diagonal <- diag(res2) 
+      #diagonal <- diag(res2) 
+      
+      #res <- OLS_own(Y,X,0)$residuals
+      #print(t(res)%*%res)
+      #print(max(xsim))
+      #n  <- length(Y)
+      #k  <- ncol(X)
+      #df <- n-k
+      #sigma2 <- as.vector(t(res)%*%res)/df
       
       #With GLS I can use the assumption of alpha and sigma2
-      #diagonal <- sigma2*xsim^alpha 
+      diagonal <- sigma2*xsim^alpha 
       #I create a matrix of 0 of dimension of Res2
       
       omega_1 <- matrix(0,T,T) 
@@ -425,7 +439,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
-  }
+#  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -443,27 +457,23 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   e <- rnorm(T,0,sigma2*xsim^alpha)
   #now I can have my y !
   Y <- X%*%beta + e
+
+  #res <- OLS_own(Y,X,0)$residuals
+  #print(t(res)%*%res)
+  #print(max(xsim))
+  #n  <- length(Y)
+  #k  <- ncol(X)
+  #df <- n-k
+  #sigma2 <- as.vector(t(res)%*%res)/df
   
   #With GLS I can use the assumption of alpha and sigma2
   diagonal <- sigma2*xsim^alpha 
-  #I create a matrix of 0 of dimension of Res2
-  
-  OLS_out <- OLS_own(Y,X,0) 
-  
-  res <- OLS_out$residuals
-  res2       <- res%*%t(res)
-  #the non-diagnonal elemets of res2 need to have 0
-  #I take away the diagonals
-  #diagonal <- diag(res2) 
-  #I create a matrix of 0 of diam
-  res2 <- matrix(0,nrow(res2), ncol(res2)) 
-  #I put back the diagonal element in the diagnonals
-  diag(res2) <- diagonal
-  
+  #I create a matrix of 0 of dimension of T
   omega_1 <- matrix(0,T,T) 
   #the diagonal is 1/sigma_n^2
   diag(omega_1) <- 1/diagonal
   
+
   #accept the sigma2 of the function
   GLS_static = GLS_own(Y,X,omega_1)
   #
@@ -473,16 +483,18 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #Choose sigma2 =1
   #sigma2 =1
   #
-  #x <- X
-  #var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
+  x <- X
+  sigma2 <- as.vector(t(res)%*%res)/df
+  
+  var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
   ###
   ###
   #var_0_ana <- var_01_ana[1,1]
   #var_1_ana <- var_01_ana[2,2]
   ###
   ####the diagonal elements are the std of Betas
-  #stdvs_0_ana <- sqrt(var_01_ana[1,1])
-  #stdvs_1_ana <- sqrt(var_01_ana[2,2])
+  stdvs_0_ana <- sqrt(var_01_ana[1,1])
+  stdvs_1_ana <- sqrt(var_01_ana[2,2])
   #
   #
   ##estimated standard errors
@@ -567,7 +579,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-  for (j in 1:length(beta1_test)) {
+#  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
@@ -618,7 +630,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
-  }
+#  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -643,15 +655,12 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   OLS_out <- OLS_own(Y,X,0) 
   
   res <- OLS_out$residuals
-  #I take absolute value in log because otherwise taking log(X) does not work
-  #Do the x so that we have alpha ln(x)
-  x <- as.matrix(cbind(Cnst=1,log(abs(xsim^alpha))))
   
   res2<- res%*%t(res)
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
   #for teacher no need to take log(X)
-  #x <- X
+  x <- X
 
   y <- log(diag(res2))
   
