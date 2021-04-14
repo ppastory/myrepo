@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 10000
+T <- 500
 
 #repl number of replication
-repl <- 2000 #less number of replication to work on the code
+repl <- 1000 #less number of replication to work on the code
 
 
 ############################################
@@ -110,7 +110,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-#  for (j in 1:length(beta1_test)) {
+  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
@@ -132,7 +132,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     print(mean(stdvs_0))
-#  }
+  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -150,26 +150,20 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #Analytical standard errors
   
-  res <- OLS_own(Y,X,0)$residuals
-  print(t(res)%*%res)
-  print(max(xsim))
-  n  <- length(Y)
-  k  <- ncol(X)
-  df <- n-k
-  sigma2 <- as.vector(t(res)%*%res)/df
+  sigma2_i <- sigma2*xsim^alpha
+  #sigma2_i is the diagonal of sigma2 omega
+  sigma_omega <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonals
+  diag(sigma_omega) <- sigma2_i
+  #sigma_omega is the asymptotic variance of the OLS estimator
   
-  sigma2 <-1
-  
-  x<-X
+  #using expression in slide 53
+  x <- X
   xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
-  var_01_ana  <- sigma2*(xxi)
+  cov_OLS <- xxi %*% t(x) %*% sigma_omega %*% x %*% xxi
   
-  var_0_ana <- var_01_ana[1,1]
-  var_1_ana <- var_01_ana[2,2]
-  
-  #the diagonal elements are the std of Betas
-  stdvs_0_ana <- sqrt(var_01_ana[1,1])
-  stdvs_1_ana <- sqrt(var_01_ana[2,2])
+  stdvs_0_ana <- sqrt(cov_OLS[1,1])
+  stdvs_1_ana <- sqrt(cov_OLS[2,2])
   
 
   stdvs_0_est <- mean(stdvs_0)
