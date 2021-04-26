@@ -42,7 +42,7 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 500
+T <- 2500
 
 #repl number of replication
 repl <- 1000 #less number of replication to work on the code
@@ -126,8 +126,32 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       beta_1_OLS[i] <- OLS_out$estimation[2,1]
     
       
-      stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
-      stdvs_1[i] <- OLS_out$estimation[2,2]
+      #We need the heteroskedastic robust standard errors
+      # I know the specification of the errors
+      res <- sigma2*xsim^alpha
+      
+      #I want the errors squared
+      res2       <- res%*%t(res)
+      
+      #I retain the diagonals
+      sigma2_i <- diag(res2) 
+      
+      #sigma_omega is the asymptotic variance of the OLS estimator
+      sigma_omega <- matrix(0,T,T) 
+      #I put back the diagonal element in the diagnonal  
+      diag(sigma_omega) <- sigma2_i
+      
+      #using expression in slide 53
+      x <- X
+      xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+      cov_OLS <- xxi %*% t(x) %*% sigma_omega %*% x %*% xxi
+      
+      stdvs_0[i] <- sqrt(cov_OLS[1,1])
+      stdvs_1[i] <- sqrt(cov_OLS[2,2])
+      
+      
+      #stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
+      #stdvs_1[i] <- OLS_out$estimation[2,2]
       
       ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
@@ -148,14 +172,23 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_0_num <- sqrt(var_0_num)
   stdvs_1_num <- sqrt(var_1_num)
   
-  #Analytical standard errors
+  #Analytical standard errors (asymptotic properties: consistent vs bias?)
+  sigma2 <- 1
+  alpha <- 4
   
-  sigma2_i <- sigma2*xsim^alpha
-  #sigma2_i is the diagonal of sigma2 omega
-  sigma_omega <- matrix(0,T,T) 
-  #I put back the diagonal element in the diagnonals
-  diag(sigma_omega) <- sigma2_i
+  # I know the specification of the errors
+  res <- sigma2*xsim^alpha
+  
+  #I want the errors squared
+  res2       <- res%*%t(res)
+
+  #I retain the diagonals
+  sigma2_i <- diag(res2) 
+  
   #sigma_omega is the asymptotic variance of the OLS estimator
+  sigma_omega <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonal  
+  diag(sigma_omega) <- sigma2_i
   
   #using expression in slide 53
   x <- X
@@ -164,8 +197,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   stdvs_0_ana <- sqrt(cov_OLS[1,1])
   stdvs_1_ana <- sqrt(cov_OLS[2,2])
-  
 
+  
   stdvs_0_est <- mean(stdvs_0)
   stdvs_1_est <- mean(stdvs_1)
   
