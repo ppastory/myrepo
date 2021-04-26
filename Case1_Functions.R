@@ -19,7 +19,9 @@ OLS_own = function (y,x,w)
   
   yhat   <- as.vector(x%*%coefs)
   res    <- y-yhat
-  sigma2 <- as.vector(t(res)%*%res/df)
+  #sigma2 <- as.vector(t(res)%*%res/df)
+  sigma2 <- as.vector(t(res)%*%res)/df
+  
   #case where we only want to do 
   
   if (w == 0){
@@ -82,9 +84,7 @@ OLS_own = function (y,x,w)
   }
 }  
   
-  GLS_own = function (y,x,o) 
-    
-    
+  GLS_own = function (y,x,omega_1) 
   {
     #x is the matrix of determinants
     #y is the matrix of dependent variables
@@ -101,10 +101,9 @@ OLS_own = function (y,x,w)
     
     yhat   <- as.vector(x%*%coefs)
     res    <- y-yhat
-    sigma2 <- as.vector(t(res)%*%res/df)
-
-    #use the input omega
-    omega_1 <- o
+    #sigma2 <- as.vector(t(res)%*%res)
+    sigma2 <- as.vector(t(res)%*%res)/df
+  
     
     #compute the coefficients
     coefs_GLS <- solve((t(x) %*% omega_1 %*% x)) %*% t(x) %*% omega_1 %*% y
