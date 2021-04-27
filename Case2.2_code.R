@@ -180,7 +180,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   res <- sigma2*xsim^alpha
   
   #I want the errors squared
-  res2       <- res%*%t(res)
+  res2 <- res%*%t(res)
 
   #I retain the diagonals
   sigma2_i <- diag(res2) 
@@ -431,12 +431,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       OLS_out <- OLS_own(Y,X,0) 
       
       res <- OLS_out$residuals
+      #res <- sigma2*xsim^alpha
       
       ### I observe the variance!
       res2       <- res%*%t(res)
       #the non-diagnonal elemets of res2 need to have 0
       #I take away the diagonals
-      #diagonal <- diag(res2) 
+      diagonal <- diag(res2) 
       
       #res <- OLS_own(Y,X,0)$residuals
       #print(t(res)%*%res)
@@ -447,7 +448,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       #sigma2 <- as.vector(t(res)%*%res)/df
       
       #With GLS I can use the assumption of alpha and sigma2
-      diagonal <- sigma2*xsim^alpha 
+      #diagonal <- sigma2*xsim^alpha 
       #I create a matrix of 0 of dimension of Res2
       
       omega_1 <- matrix(0,T,T) 
@@ -480,50 +481,39 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_1_num <- sd(beta_1_GLS)
   
   #analytical standard errors
-  
-  e <- rnorm(T,0,sigma2*xsim^alpha)
-  #now I can have my y !
-  Y <- X%*%beta + e
-
-  #res <- OLS_own(Y,X,0)$residuals
-  #print(t(res)%*%res)
-  #print(max(xsim))
-  #n  <- length(Y)
-  #k  <- ncol(X)
-  #df <- n-k
-  #sigma2 <- as.vector(t(res)%*%res)/df
-  
+  sigma2<-1
+  alpha<-4
+  # I know the specification of the errors
   #With GLS I can use the assumption of alpha and sigma2
-  diagonal <- sigma2*xsim^alpha 
+  diagonal <- sigma2*xsim^alpha
+  
   #I create a matrix of 0 of dimension of T
   omega_1 <- matrix(0,T,T) 
   #the diagonal is 1/sigma_n^2
   diag(omega_1) <- 1/diagonal
   
-
+  GLS_static <- GLS_own(Y,X,omega_1)
+  beta_0_GLS <- GLS_static[1,1]
+  beta_1_GLS <- GLS_static[2,1]
+  
+  beta_GLS <- as.matrix(rbind(beta_0_GLS,beta_1_GLS))
+  
+  yhat   <- as.vector(X%*%beta_GLS)
+  res    <- Y-yhat
+  
+  sigma2 <- as.vector(t(res)%*%res)/df
+  
+  cov_GLS   <- solve(t(X) %*% omega_1 %*%X)
+  stdvs_0_ana <- sqrt(cov_GLS[1,1])
+  stdvs_1_ana <- sqrt(cov_GLS[2,2])
+  
   #accept the sigma2 of the function
   GLS_static = GLS_own(Y,X,omega_1)
   #
   stdvs_0_ana <- GLS_static[1,2]
   stdvs_1_ana <- GLS_static[2,2]
   #
-  #Choose sigma2 =1
-  #sigma2 =1
-  #
-  x <- X
-  sigma2 <- as.vector(t(res)%*%res)/df
   
-  var_01_ana   <- sigma2 * solve(t(x) %*% omega_1 %*%x)
-  ###
-  ###
-  #var_0_ana <- var_01_ana[1,1]
-  #var_1_ana <- var_01_ana[2,2]
-  ###
-  ####the diagonal elements are the std of Betas
-  stdvs_0_ana <- sqrt(var_01_ana[1,1])
-  stdvs_1_ana <- sqrt(var_01_ana[2,2])
-  #
-  #
   ##estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
   stdvs_1_est <- mean(stdvs_1)
