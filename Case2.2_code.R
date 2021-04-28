@@ -127,14 +127,15 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     
       
       #We need the heteroskedastic robust standard errors
-      # I know the specification of the errors
-      res <- sigma2*xsim^alpha
-      
-      #I want the errors squared
-      res2       <- res%*%t(res)
+      ## I know the specification of the errors
+      #res <- sigma2*xsim^alpha
+      #
+      ##I want the errors squared
+      #res2       <- res%*%t(res)
       
       #I retain the diagonals
-      sigma2_i <- diag(res2) 
+      #sigma2_i <- diag(res2) 
+      sigma2_i <- sigma2*xsim^alpha
       
       #sigma_omega is the asymptotic variance of the OLS estimator
       sigma_omega <- matrix(0,T,T) 
@@ -481,11 +482,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_1_num <- sd(beta_1_GLS)
   
   #analytical standard errors
-  sigma2<-1
+
   alpha<-4
+  
+  
   # I know the specification of the errors
   #With GLS I can use the assumption of alpha and sigma2
-  diagonal <- sigma2*xsim^alpha
+  diagonal <- xsim^alpha
   
   #I create a matrix of 0 of dimension of T
   omega_1 <- matrix(0,T,T) 
@@ -501,9 +504,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   yhat   <- as.vector(X%*%beta_GLS)
   res    <- Y-yhat
   
-  sigma2 <- as.vector(t(res)%*%res)/df
+  sigma2_homo <- as.vector(t(res)%*%res)/df
   
-  cov_GLS   <- solve(t(X) %*% omega_1 %*%X)
+  e <- rnorm(T,0,sigma2*xsim^alpha)
+  
+  sigma2_homo <- var(e)
+  
+  
+  cov_GLS   <- sigma2_homo * solve(t(X) %*% omega_1 %*%X)
   stdvs_0_ana <- sqrt(cov_GLS[1,1])
   stdvs_1_ana <- sqrt(cov_GLS[2,2])
   
@@ -668,6 +676,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #Analytical standard errors  
   sigma2 <- 1
   e <- rnorm(T,0,sigma2*xsim^alpha)
+  
+  
   #now I can have my y !
   Y <- X%*%beta + e
   
