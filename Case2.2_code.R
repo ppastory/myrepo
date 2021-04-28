@@ -616,13 +616,15 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       res <- OLS_out$residuals
       #I take absolute value in log because otherwise taking log(X) does not work
       #for teacher no need to take log(X)
-      x <- X
+      x <- ln(X)
       y <- log(res^2)
       
       ## Run OLS
       xy     <- t(x)%*%y #indeed I need some kind of X_i
       xxi    <- solve(t(x)%*%x)
       coefs  <- as.vector(xxi%*%xy)
+      
+      
       sigma_hat   <- as.vector(x%*%coefs)
       
       #for teacher sigma_hat is ok
@@ -677,7 +679,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
   #for teacher no need to take log(X)
-  x <- X
+  x <- as.matrix(cbind(Cnst=1,log(abs(xsim))))
 
   y <- log(diag(res2))
   
@@ -685,18 +687,21 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   xy     <- t(x)%*%y #indeed I need some kind of X_i
   xxi    <- solve(t(x)%*%x)
   coefs  <- as.vector(xxi%*%xy)
-  sigma_hat   <- as.vector(x%*%coefs)
-  #for teacher sigma_hat is ok
-  sigma_hat <- exp(sigma_hat)
+  sigma2_est <- exp(coefs[1])
+  alpha_est <- coefs[2]
   
-  hist(sigma_hat)
+  
+  #for teacher sigma_hat is ok
+  sigma2_hat <- sigma2_est*xsim^alpha_est
+  
+  hist(sigma2_hat)
   
   #now we create the matrix and put sigma_hat as the diagonal of that matrix
   
   omega_hat <- matrix(0,length(res), length(res)) 
   #I put back the diagonal element in the diagnonals
   #I take absolute value to only have positive sigma_hat
-  diag(omega_hat) <- 1/sigma_hat
+  diag(omega_hat) <- 1/sigma2_hat
 
   GLS_static = GLS_own (Y,X,omega_hat)
  
