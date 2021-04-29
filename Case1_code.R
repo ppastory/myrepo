@@ -74,6 +74,9 @@ lnY_it_D_diff   = diff(lnY_it_D, differences = 1)
 y_D_diff<-as.vector(lnC_it_D_diff)
 x_D_diff<-as.matrix(cbind(Cnst=1,lnC_itL1_D_diff,lnP_it_D_diff,lnPn_it_D_diff,lnY_it_D_diff))
 
+y_D_diff = na.omit(y_D_diff) #Remove NA's otherwise the OLS functions returns an error
+x_D_diff = na.omit(x_D_diff)
+
 #ok now we've got all the data we need!
 
 ####################################################################
@@ -86,12 +89,19 @@ OLS_static = OLS_own(y_S,x_S,0)
 OLS_static$residuals
 
 ####################################################################
+###         Run OLS on static model with White correction        ###
+####################################################################
+
+OLS_static_white_errors = OLS_own(y_S,x_S,1)
+
+
+####################################################################
 ###                Run GLS on static model                       ###
 ####################################################################
 
 res <- OLS_static$residuals
 
-### I compute Omega outside of the funciton
+### I compute Omega outside of the function
 res2       <- res%*%t(res)
 #the non-diagnonal elemets of res2 need to have 0
 #I take away the diagonals
@@ -149,7 +159,6 @@ GLS_static = GLS_own (y_S,x_S,omega_hat)
 ##################################################################
 ###     Run OLS on dynamic model in first difference           ###
 ##################################################################
-
 
 
 OLS_dynamic = OLS_own(y_D_diff,x_D_diff,1)
