@@ -122,8 +122,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
   for (j in 1:length(beta1_test)) {
-    
     for (i in 1:repl) {
+    
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
       e <- rnorm(T,0,sd = sqrt(diagonal))
@@ -260,6 +260,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   stdvs_0 <- rep(0,repl)
   stdvs_1 <- rep(0,repl)
   sigma2 <- 1
+  alpha <- 4
+  
+  diagonal_white <- xsim^alpha
+  #sigma_omega is the asymptotic variance of the OLS estimator
+  sigma_omega_white <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonal  
+  diag(sigma_omega_white) <- diagonal_white
+  
   
   #grid of beta1 
   beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
@@ -272,9 +280,10 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
+      print(i)
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sd = sqrt(diagonal))
+      e <- rnorm(T,0,sd = sqrt(diagonal_white))
       #e <- rnorm(T,0,diagonal)
       #now I can have my y !
       Y <- X%*%beta + e
@@ -291,7 +300,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] 
     }
-    
+   print(mean(stdvs_0)) 
   }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
@@ -403,6 +412,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
+      print(i)
       sigma2 <-1
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
@@ -545,6 +555,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
+      print(i)
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
       e <- rnorm(T,0,sd = sqrt(diagonal))
@@ -580,16 +591,14 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       #I put back the diagonal element in the diagnonal  
       diag(sigma_omega_est) <- diagonal_est
       
-      cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est) %*%X)
-      
       #omega is known
       GLS_static = GLS_own(Y,X,sigma_omega_est)
       
       beta_0_EGLS[i] <- GLS_static[1,1]
       beta_1_EGLS[i] <- GLS_static[2,1]
       
-      stdvs_0[i] <- sqrt(cov_EGLS[1,1])
-      stdvs_1[i] <- sqrt(cov_EGLS[2,2])
+      stdvs_0[i] <- GLS_static[1,2]
+      stdvs_1[i] <- GLS_static[2,2]
       
       ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] 
     }
@@ -645,7 +654,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #I put back the diagonal element in the diagnonal  
   diag(sigma_omega_est) <- diagonal_est
 
-  cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est) %*%X)
+  cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est, tol = 1e-17) %*%X)
   stdvs_0_ana <- sqrt(cov_EGLS[1,1])
   stdvs_1_ana <- sqrt(cov_EGLS[2,2])
   
