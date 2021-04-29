@@ -730,6 +730,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   beta_1_mat[,3:4]
   
+  #test
+  
   
   
   
