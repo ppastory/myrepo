@@ -91,7 +91,7 @@ OLS_static$residuals
 
 res <- OLS_static$residuals
 
-### I compute Omega outside of the funciton
+### I compute Omega outside of the function
 res2       <- res%*%t(res)
 #the non-diagnonal elemets of res2 need to have 0
 #I take away the diagonals
