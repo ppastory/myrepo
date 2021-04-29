@@ -45,7 +45,7 @@ set.seed(123)
 T <- 2500
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
+repl <- 2000 #less number of replication to work on the code
 
 
 ############################################
@@ -86,12 +86,23 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #let's put the beta in matrix form
   beta <- as.matrix(rbind(b_0,b_1))
   
+  
   #let's get some errors
   #sigma2 is 1
   sigma2 <- 1
   alpha <- 4
+  
+  
+  diagonal <- xsim^alpha
+  #sigma_omega is the asymptotic variance of the OLS estimator
+  sigma_omega <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonal  
+  diag(sigma_omega) <- diagonal
+  
   #create the vector of errors
-  e <- rnorm(T,0,sigma2*xsim^alpha)
+  e <- rnorm(T,0,sd = sqrt(diagonal))
+  #e <- rnorm(T,0,diagonal)
+  
   
   #now I can have my y !
   Y <- X%*%beta + e
@@ -115,7 +126,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2*xsim^alpha)
+      e <- rnorm(T,0,sd = sqrt(diagonal))
+      #e <- rnorm(T,0,diagonal)
       #now I can have my y !
       Y <- X%*%beta + e
       
@@ -124,35 +136,11 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       
       beta_0_0LS[i] <- OLS_out$estimation[1,1]
       beta_1_OLS[i] <- OLS_out$estimation[2,1]
-    
-      
-      #We need the heteroskedastic robust standard errors
-      ## I know the specification of the errors
-      #res <- sigma2*xsim^alpha
-      #
-      ##I want the errors squared
-      #res2       <- res%*%t(res)
-      
-      #I retain the diagonals
-      #sigma2_i <- diag(res2) 
-      sigma2_i <- sigma2*xsim^alpha
-      
-      #sigma_omega is the asymptotic variance of the OLS estimator
-      sigma_omega <- matrix(0,T,T) 
-      #I put back the diagonal element in the diagnonal  
-      diag(sigma_omega) <- sigma2_i
-      
-      #using expression in slide 53
-      x <- X
-      xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
-      cov_OLS <- xxi %*% t(x) %*% sigma_omega %*% x %*% xxi
-      
-      stdvs_0[i] <- sqrt(cov_OLS[1,1])
-      stdvs_1[i] <- sqrt(cov_OLS[2,2])
+  
       
       
-      #stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
-      #stdvs_1[i] <- OLS_out$estimation[2,2]
+      stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
+      stdvs_1[i] <- OLS_out$estimation[2,2]
       
       ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
     }
@@ -177,19 +165,11 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   sigma2 <- 1
   alpha <- 4
   
-  # I know the specification of the errors
-  res <- sigma2*xsim^alpha
-  
-  #I want the errors squared
-  res2 <- res%*%t(res)
-
-  #I retain the diagonals
-  sigma2_i <- diag(res2) 
-  
+  diagonal <- xsim^alpha
   #sigma_omega is the asymptotic variance of the OLS estimator
   sigma_omega <- matrix(0,T,T) 
   #I put back the diagonal element in the diagnonal  
-  diag(sigma_omega) <- sigma2_i
+  diag(sigma_omega) <- diagonal
   
   #using expression in slide 53
   x <- X
@@ -262,10 +242,10 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #here OLS standard errors will be biased and inconsistent
 
-  OLS_out <- OLS_own(Y,X,1) 
-  
-  
-  beta_0_OLSW[i] <- OLS_out[1,1]
+  #OLS_out <- OLS_own(Y,X,1) 
+  #
+  #
+  #beta_0_OLSW[i] <- OLS_out[1,1]
   
   
   
@@ -289,12 +269,13 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
- # for (j in 1:length(beta1_test)) {
+  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2*xsim^alpha)
+      e <- rnorm(T,0,sd = sqrt(diagonal))
+      #e <- rnorm(T,0,diagonal)
       #now I can have my y !
       Y <- X%*%beta + e
       
@@ -311,7 +292,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] 
     }
     
- # }
+  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -419,45 +400,28 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
- # for (j in 1:length(beta1_test)) {
+  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       sigma2 <-1
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2*xsim^alpha)
+      e <- rnorm(T,0,sd = sqrt(diagonal))
+      #e <- rnorm(T,0,diagonal)
       #now I can have my y !
       Y <- X%*%beta + e
       
-      OLS_out <- OLS_own(Y,X,0) 
+      sigma2 <- 1
+      alpha <- 4
       
-      res <- OLS_out$residuals
-      #res <- sigma2*xsim^alpha
+      diagonal <- xsim^alpha
+      #sigma_omega is the asymptotic variance of the OLS estimator
+      sigma_omega <- matrix(0,T,T) 
+      #I put back the diagonal element in the diagnonal  
+      diag(sigma_omega) <- diagonal
       
-      ### I observe the variance!
-      res2       <- res%*%t(res)
-      #the non-diagnonal elemets of res2 need to have 0
-      #I take away the diagonals
-      diagonal <- diag(res2) 
-      
-      #res <- OLS_own(Y,X,0)$residuals
-      #print(t(res)%*%res)
-      #print(max(xsim))
-      #n  <- length(Y)
-      #k  <- ncol(X)
-      #df <- n-k
-      #sigma2 <- as.vector(t(res)%*%res)/df
-      
-      #With GLS I can use the assumption of alpha and sigma2
-      #diagonal <- sigma2*xsim^alpha 
-      #I create a matrix of 0 of dimension of Res2
-      
-      omega_1 <- matrix(0,T,T) 
-      #the diagonal is 1/sigma_n^2
-      diag(omega_1) <- 1/diagonal
-      
-      GLS_static = GLS_own(Y,X,omega_1)
-      
+      #omega is known
+      GLS_static = GLS_own(Y,X,sigma_omega)
       
       beta_0_GLS[i] <- GLS_static[1,1]
       beta_1_GLS[i] <- GLS_static[2,1]
@@ -468,7 +432,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
       ttest_matrix[i,j] <- (beta_1_GLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
-#  }
+  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -483,44 +447,18 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   #analytical standard errors
 
-  alpha<-4
+  sigma2 <- 1
+  alpha <- 4
   
-  
-  # I know the specification of the errors
-  #With GLS I can use the assumption of alpha and sigma2
   diagonal <- xsim^alpha
+  #sigma_omega is the asymptotic variance of the OLS estimator
+  sigma_omega <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonal  
+  diag(sigma_omega) <- diagonal
   
-  #I create a matrix of 0 of dimension of T
-  omega_1 <- matrix(0,T,T) 
-  #the diagonal is 1/sigma_n^2
-  diag(omega_1) <- 1/diagonal
-  
-  GLS_static <- GLS_own(Y,X,omega_1)
-  beta_0_GLS <- GLS_static[1,1]
-  beta_1_GLS <- GLS_static[2,1]
-  
-  beta_GLS <- as.matrix(rbind(beta_0_GLS,beta_1_GLS))
-  
-  yhat   <- as.vector(X%*%beta_GLS)
-  res    <- Y-yhat
-  
-  sigma2_homo <- as.vector(t(res)%*%res)/df
-  
-  e <- rnorm(T,0,sigma2*xsim^alpha)
-  
-  sigma2_homo <- var(e)
-  
-  
-  cov_GLS   <- sigma2_homo * solve(t(X) %*% omega_1 %*%X)
+  cov_GLS   <- sigma2 * solve(t(X) %*% solve(sigma_omega) %*%X)
   stdvs_0_ana <- sqrt(cov_GLS[1,1])
   stdvs_1_ana <- sqrt(cov_GLS[2,2])
-  
-  #accept the sigma2 of the function
-  GLS_static = GLS_own(Y,X,omega_1)
-  #
-  stdvs_0_ana <- GLS_static[1,2]
-  stdvs_1_ana <- GLS_static[2,2]
-  #
   
   ##estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
@@ -604,60 +542,59 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   ttest_matrix <- matrix(0,repl, length(beta1_test))
   
-#  for (j in 1:length(beta1_test)) {
+  for (j in 1:length(beta1_test)) {
     
     for (i in 1:repl) {
       #stochastic X: X = rnorm(T,0,sigma2)
       #let's get some errors, we define sigma 2 =1 earlier
-      e <- rnorm(T,0,sigma2*xsim^alpha)
+      e <- rnorm(T,0,sd = sqrt(diagonal))
+      #e <- rnorm(T,0,diagonal)  
+      
       #now I can have my y !
       Y <- X%*%beta + e
-      
-      
-      #For EGLS, we assume that Var(miu_{i,t}) is sigma_i^2
-      
-      n  <- length(Y)
-      k  <- ncol(X)
       
       OLS_out <- OLS_own(Y,X,0) 
       
       res <- OLS_out$residuals
-      #I take absolute value in log because otherwise taking log(X) does not work
+      
+      res2<- res%*%t(res)
+      #the non-diagnonal elemets of res2 need to have 0
+      #I take away the diagonals
       #for teacher no need to take log(X)
-      x <- ln(X)
-      y <- log(res^2)
+      x <- as.matrix(cbind(Cnst=01,log(abs(xsim))))
+      
+      y <- log(diag(res2))
       
       ## Run OLS
       xy     <- t(x)%*%y #indeed I need some kind of X_i
       xxi    <- solve(t(x)%*%x)
       coefs  <- as.vector(xxi%*%xy)
+      sigma2_est <- exp(coefs[1])
+      alpha_est <- coefs[2]
       
-      
-      sigma_hat   <- as.vector(x%*%coefs)
       
       #for teacher sigma_hat is ok
-      #But we think we need to get the initial sigma_hat to get the variance
-      sigma_hat <- exp(sigma_hat)
+      diagonal_est <- xsim^alpha_est
+      #sigma_omega is the asymptotic variance of the OLS estimator
+      sigma_omega_est <- matrix(0,T,T) 
+      #I put back the diagonal element in the diagnonal  
+      diag(sigma_omega_est) <- diagonal_est
       
-      #now we create the matrix and put sigma_hat as the diagonal of that matrix
-      omega_hat <- matrix(0,length(res), length(res)) 
-      #I put back the diagonal element in the diagnonals
-      #I take absolute value to have positive values 
-      diag(omega_hat) <- 1/sigma_hat
+      cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est) %*%X)
       
-      GLS_static = GLS_own (Y,X,omega_hat)
-      
+      #omega is known
+      GLS_static = GLS_own(Y,X,sigma_omega_est)
       
       beta_0_EGLS[i] <- GLS_static[1,1]
       beta_1_EGLS[i] <- GLS_static[2,1]
       
-      stdvs_0[i] <- GLS_static[1,2]
-      stdvs_1[i] <- GLS_static[2,2]
+      stdvs_0[i] <- sqrt(cov_EGLS[1,1])
+      stdvs_1[i] <- sqrt(cov_EGLS[2,2])
       
       ttest_matrix[i,j] <- (beta_1_EGLS[i] - beta1_test[j])/stdvs_1[i] 
     }
     
-#  }
+  }
   
   colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
   
@@ -675,8 +612,8 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
   #Analytical standard errors  
   sigma2 <- 1
-  e <- rnorm(T,0,sigma2*xsim^alpha)
-  
+  e <- rnorm(T,0,sd = sqrt(diagonal))
+  #e <- rnorm(T,0,diagonal)  
   
   #now I can have my y !
   Y <- X%*%beta + e
@@ -689,7 +626,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   #the non-diagnonal elemets of res2 need to have 0
   #I take away the diagonals
   #for teacher no need to take log(X)
-  x <- as.matrix(cbind(Cnst=1,log(abs(xsim))))
+  x <- as.matrix(cbind(Cnst=01,log(abs(xsim))))
 
   y <- log(diag(res2))
   
@@ -702,38 +639,16 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
   
   
   #for teacher sigma_hat is ok
-  sigma2_hat <- sigma2_est*xsim^alpha_est
-  
-  hist(sigma2_hat)
-  
-  #now we create the matrix and put sigma_hat as the diagonal of that matrix
-  
-  omega_hat <- matrix(0,length(res), length(res)) 
-  #I put back the diagonal element in the diagnonals
-  #I take absolute value to only have positive sigma_hat
-  diag(omega_hat) <- 1/sigma2_hat
+  diagonal_est <- xsim^alpha_est
+  #sigma_omega is the asymptotic variance of the OLS estimator
+  sigma_omega_est <- matrix(0,T,T) 
+  #I put back the diagonal element in the diagnonal  
+  diag(sigma_omega_est) <- diagonal_est
 
-  GLS_static = GLS_own (Y,X,omega_hat)
- 
-  stdvs_0_ana <- GLS_static[1,2]
-  stdvs_1_ana <- GLS_static[2,2]
-  stdvs_0_ana
-  stdvs_1_ana
+  cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est) %*%X)
+  stdvs_0_ana <- sqrt(cov_EGLS[1,1])
+  stdvs_1_ana <- sqrt(cov_EGLS[2,2])
   
-  #I need to do it by hand because the formula computes a different sigma2 
-  #than the one we are supposed to assume
-  #x <- X
-  #
-  #
-  #var_01_MC   <- sigma2 * solve(t(x) %*% omega_hat %*%x)
-  #
-  #
-  #var_0_MC <- var_01_MC[1,1]
-  #var_1_MC <- var_01_MC[2,2]
-  #
-  ##the diagonal elements are the std of Betas
-  #stdvs_0_ana <- sqrt(var_01_MC[1,1])
-  #stdvs_1_ana <- sqrt(var_01_MC[2,2])
   
   #estimated standard errors
   stdvs_0_est <- mean(stdvs_0)
