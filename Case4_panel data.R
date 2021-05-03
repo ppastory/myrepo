@@ -126,4 +126,37 @@ sigma2 <- as.vector(t(res)%*%res)/df
   out = rbind(coefs,stdvs,tstats,pvals)
   out = t(out)
 
+##First let's first difference our data!
+  
+data <- transform(data, dlnC_it = ave(`ln C_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnC_it_1 = ave(ln.C_it, state, FUN = function(x) c(NA, diff(x))))
 
+data<-na.omit(data)
+
+#Extract T and N
+
+N <-   length(unique(data$state))
+T <-   length(unique(data$year))
+
+
+y_fd <- as.matrix(data[,15])
+x_fd <- as.matrix(data[,16:19])
+  
+#Let's create our H matrix
+
+diagonal <- 2
+offdiagonal<- -1
+H <- matrix(0,26,26)
+diag(H) <- diagonal
+diag(H[-1,])<-offdiagonal
+diag(H[,-1])<-offdiagonal
+H
+
+
+
+
+  
+  
