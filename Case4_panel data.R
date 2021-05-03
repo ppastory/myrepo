@@ -149,12 +149,29 @@ x_fd <- as.matrix(data[,16:19])
 
 diagonal <- 2
 offdiagonal<- -1
-H <- matrix(0,26,26)
+H <- matrix(0,T-2,T-2)
 diag(H) <- diagonal
 diag(H[-1,])<-offdiagonal
 diag(H[,-1])<-offdiagonal
 H
 
+#Let's create the Zi matrix
+
+yit <- seq(1,T-2)
+n_inst <- sum(yit)
+Z_i <- matrix(0,T-2,n_inst)
+column <-1 
+
+for (i in (1:(T-2))) {
+  print(i)
+  chunk <- as.numeric(yit[1:i])
+  column <- column + i -1
+  
+  for (j in (1:length(chunk))) {
+    Z_i[i,column+j-1] <- chunk[j]
+    }
+  
+}
 
 
 
