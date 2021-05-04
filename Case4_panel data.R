@@ -126,6 +126,9 @@ sigma2 <- as.vector(t(res)%*%res)/df
   out = rbind(coefs,stdvs,tstats,pvals)
   out = t(out)
 
+  T <-   length(unique(data$year)) #the real T
+  
+  
 ##First let's first difference our data!
   
 data <- transform(data, dlnC_it = ave(`ln C_it`, state, FUN = function(x) c(NA, diff(x))))
@@ -139,7 +142,7 @@ data<-na.omit(data)
 #Extract T and N
 
 N <-   length(unique(data$state))
-T <-   length(unique(data$year)) #Our T is already T -2 
+
 #we loose an obs with lag and another one with difference
 
 
@@ -147,38 +150,27 @@ T <-   length(unique(data$year)) #Our T is already T -2
 y_fd <- as.matrix(data[,15])
 x_fd <- as.matrix(data[,16:19])
   
-#Let's create our H matrix
-
-diagonal <- 2
-offdiagonal<- -1
-H <- matrix(0,T,T)
-diag(H) <- diagonal
-diag(H[-1,])<-offdiagonal
-diag(H[,-1])<-offdiagonal
-H
-
 #Let's create the Zi matrix
 #we need to start with the Z_1 matrix that below which we are going to stack the other Z_i
 
 
-
 #Let's loop over the states and create our big matrix
 
-yit <- seq(1,T)
+yit <- seq(1,T-2)
 n_inst <- sum(yit)
 
-x_i <- x_fd[1:T]
+#The chunks have size 27 !!!
+#because yi27 is the last instrument of delta_ei29
+y_1 <- y[1:T-2]
 
-y_i <- y_fd[1:T]
-
-yit <- seq(1,T)
-n_inst <- sum(yit)
-Z_1 <- matrix(0,T,n_inst)
+Z_1 <- matrix(0,T-2,n_inst)
 column <-1 
 
-for (i in (1:T)) {
-  print(i)
-  chunk <- as.numeric(y_i[1:i])
+for (i in (1:(T-2))) {
+  print
+  #Chunk is the bunch of yi that we are going to put in the Z_i matrix
+  chunk <- as.numeric(y_1[1:i])
+  print(chunk)
   column <- column + i -1
   
   for (j in (1:length(chunk))) {
@@ -194,60 +186,72 @@ Z_1
 W <- W_1
 Z <- Z_1
 
-for (sst in seq(29, nrow(x_fd), T)) {
+#We start at the column 30 and go by chunks of 29
+#but we will only loop over the Y chunks until 27 !
+#that is because yi27 will instrument delta_ei29
+for (sst in seq(30, length(y), T)) {
 
   print(sst)
-  x_i <- x_fd[sst:(sst+27)]
+  #The second chunk for example goes from 30 to 
+  #30 + 27 
+  y_i <- y[sst:(sst+27)]
   
-  y_i <- y_fd[sst:(sst+27)]
+  #The matrix of instruments has size 27 x 378 ! 
+  #each time period we use more lags
+  Z_i <- matrix(0,T-2,n_inst)
+  column <-1 
+
+  for (i in (1:(T-2))) {
+    print(i)
+    chunk <- as.numeric(y_i[1:i])
+    column <- column + i -1
   
-
-Z_i <- matrix(0,T,n_inst)
-column <-1 
-
-
-x_i <- x_fd[1:T]
-
-y_i <- y_fd[1:T]
-
-yit <- seq(1,T)
-n_inst <- sum(yit)
-Z_i <- matrix(0,T,n_inst)
-column <-1 
-
-for (i in (1:T)) {
-  print(i)
-  chunk <- as.numeric(y_i[1:i])
-  column <- column + i -1
+    for (j in (1:length(chunk))) {
+      Z_i[i,column+j-1] <- chunk[j]
+    }
   
-  for (j in (1:length(chunk))) {
-    Z_i[i,column+j-1] <- chunk[j]
   }
-  
-}
 
-W_i <- t(Z_i)%*%H%*%Z_i #achtung !!! this still needs to be inversed
-
-W <- W + W_i
 
 Z <- rbind(Z,Z_i)
 
 }
 
+n_inst_var <- N*(T-2)
 
-  
+#Imagine our big H is very big -> we try to create 
+diagonal <- 2
+offdiagonal<- -1
+H <- matrix(0,n_inst_var,n_inst_var)
+diag(H) <- diagonal
+diag(H[-1,])<-offdiagonal
+diag(H[,-1])<-offdiagonal
+H
+#this is a matrix with diagonal 2 and -1 on each side 
+
+
+W_notinv <- t(Z) %*% H %*% Z 
+#we have the big W optimal
+W_opt <- solve(W_notinv)
+
+#Now we need to create the big X and Y matrix but it is not simply x and y
+
+#Remember we can only start instrumenting in period 3 until period 29 
+#this means that we take the 27 last periods for every state!
+#for every state I need to kill the first 2 periods
+data_s <- data
+
+data_s[data_s == 65] <- NA
+data_s <- na.omit(data_s)
+
+y_fd_s <- as.matrix(data_s[,15])
+#x_fd_s <- as.matrix(data_s[,16:19])
+x_fd_s <- as.matrix(data_s[,19])
+
+#we have all the ingredients we need to compute our gamma
+
+gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
 
 
 
-
-for (i in (1:(T-2))) {
-  print(i)
-  chunk <- as.numeric(yit[1:i])
-  column <- column + i -1
-  
-  for (j in (1:length(chunk))) {
-    Z_i[i,column+j-1] <- chunk[j]
-  }
-  
-}
