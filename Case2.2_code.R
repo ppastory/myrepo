@@ -644,17 +644,17 @@ xy     <- t(x)%*%y #indeed I need some kind of X_i
 xxi    <- solve(t(x)%*%x)
 coefs  <- as.vector(xxi%*%xy)
 sigma2_est <- exp(coefs[1])
-alpha_est <- 2*coefs[2]
+zeta_est <- coefs[2]
 
 
 #for teacher sigma_hat is ok
-diagonal_est <- xsim^alpha_est
+diagonal_est <- (xsim^2)^zeta_est
 #sigma_omega is the asymptotic variance of the OLS estimator
 sigma_omega_est <- matrix(0,T,T) 
 #I put back the diagonal element in the diagnonal  
-diag(sigma_omega_est) <- diagonal_est
+diag(sigma_omega_est) <- 1/diagonal_est
 
-cov_EGLS   <- sigma2_est * solve(t(X) %*% solve(sigma_omega_est, tol = 1e-17) %*%X)
+cov_EGLS   <- sigma2_est * solve(t(X) %*% sigma_omega_est %*%X)
 stdvs_0_ana <- sqrt(cov_EGLS[1,1])
 stdvs_1_ana <- sqrt(cov_EGLS[2,2])
 
