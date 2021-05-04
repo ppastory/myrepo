@@ -464,9 +464,9 @@ diagonal <- xsim^alpha
 #sigma_omega is the asymptotic variance of the OLS estimator
 sigma_omega <- matrix(0,T,T) 
 #I put back the diagonal element in the diagnonal  
-diag(sigma_omega) <- diagonal
+diag(sigma_omega) <- 1/diagonal
 
-cov_GLS   <- sigma2 * solve(t(X) %*% solve(sigma_omega) %*%X)
+cov_GLS   <- sigma2 * solve(t(X) %*% sigma_omega %*%X)
 stdvs_0_ana <- sqrt(cov_GLS[1,1])
 stdvs_1_ana <- sqrt(cov_GLS[2,2])
 
