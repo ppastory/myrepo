@@ -572,7 +572,7 @@ for (j in 1:length(beta1_test)) {
     #the non-diagnonal elemets of res2 need to have 0
     #I take away the diagonals
     #for teacher no need to take log(X)
-    x <- as.matrix(cbind(Cnst=01,log(abs(xsim))))
+    x <- as.matrix(cbind(Cnst=01,log(xsim^2)))
     
     y <- log(diag(res2))
     
@@ -581,7 +581,7 @@ for (j in 1:length(beta1_test)) {
     xxi    <- solve(t(x)%*%x)
     coefs  <- as.vector(xxi%*%xy)
     sigma2_est <- exp(coefs[1])
-    alpha_est <- coefs[2]
+    alpha_est <- 2*coefs[2]
     
     
     #for teacher sigma_hat is ok
@@ -635,7 +635,7 @@ res2<- res%*%t(res)
 #the non-diagnonal elemets of res2 need to have 0
 #I take away the diagonals
 #for teacher no need to take log(X)
-x <- as.matrix(cbind(Cnst=01,log(abs(xsim))))
+x <- as.matrix(cbind(Cnst=01,log(xsim^2)))
 
 y <- log(diag(res2))
 
@@ -644,7 +644,7 @@ xy     <- t(x)%*%y #indeed I need some kind of X_i
 xxi    <- solve(t(x)%*%x)
 coefs  <- as.vector(xxi%*%xy)
 sigma2_est <- exp(coefs[1])
-alpha_est <- coefs[2]
+alpha_est <- 2*coefs[2]
 
 
 #for teacher sigma_hat is ok
