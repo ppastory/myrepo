@@ -428,7 +428,7 @@ for (j in 1:length(beta1_test)) {
     #sigma_omega is the asymptotic variance of the OLS estimator
     sigma_omega <- matrix(0,T,T) 
     #I put back the diagonal element in the diagnonal  
-    diag(sigma_omega) <- diagonal
+    diag(sigma_omega) <- 1/diagonal
     
     #omega is known
     GLS_static = GLS_own(Y,X,sigma_omega)
