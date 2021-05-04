@@ -139,7 +139,9 @@ data<-na.omit(data)
 #Extract T and N
 
 N <-   length(unique(data$state))
-T <-   length(unique(data$year))
+T <-   length(unique(data$year)) #Our T is already T -2 
+#we loose an obs with lag and another one with difference
+
 
 
 y_fd <- as.matrix(data[,15])
@@ -149,18 +151,95 @@ x_fd <- as.matrix(data[,16:19])
 
 diagonal <- 2
 offdiagonal<- -1
-H <- matrix(0,T-2,T-2)
+H <- matrix(0,T,T)
 diag(H) <- diagonal
 diag(H[-1,])<-offdiagonal
 diag(H[,-1])<-offdiagonal
 H
 
 #Let's create the Zi matrix
+#we need to start with the Z_1 matrix that below which we are going to stack the other Z_i
 
-yit <- seq(1,T-2)
+
+
+#Let's loop over the states and create our big matrix
+
+yit <- seq(1,T)
 n_inst <- sum(yit)
-Z_i <- matrix(0,T-2,n_inst)
+
+x_i <- x_fd[1:T]
+
+y_i <- y_fd[1:T]
+
+yit <- seq(1,T)
+n_inst <- sum(yit)
+Z_1 <- matrix(0,T,n_inst)
 column <-1 
+
+for (i in (1:T)) {
+  print(i)
+  chunk <- as.numeric(y_i[1:i])
+  column <- column + i -1
+  
+  for (j in (1:length(chunk))) {
+    Z_1[i,column+j-1] <- chunk[j]
+  }
+  
+}
+
+W_1 <- t(Z_1)%*%H%*%Z_1 #achtung !!! this still needs to be inversed
+
+Z_1 
+
+W <- W_1
+Z <- Z_1
+
+for (sst in seq(29, nrow(x_fd), T)) {
+
+  print(sst)
+  x_i <- x_fd[sst:(sst+27)]
+  
+  y_i <- y_fd[sst:(sst+27)]
+  
+
+Z_i <- matrix(0,T,n_inst)
+column <-1 
+
+
+x_i <- x_fd[1:T]
+
+y_i <- y_fd[1:T]
+
+yit <- seq(1,T)
+n_inst <- sum(yit)
+Z_i <- matrix(0,T,n_inst)
+column <-1 
+
+for (i in (1:T)) {
+  print(i)
+  chunk <- as.numeric(y_i[1:i])
+  column <- column + i -1
+  
+  for (j in (1:length(chunk))) {
+    Z_i[i,column+j-1] <- chunk[j]
+  }
+  
+}
+
+W_i <- t(Z_i)%*%H%*%Z_i #achtung !!! this still needs to be inversed
+
+W <- W + W_i
+
+Z <- rbind(Z,Z_i)
+
+}
+
+
+  
+
+
+
+
 
 for (i in (1:(T-2))) {
   print(i)
@@ -169,11 +248,6 @@ for (i in (1:(T-2))) {
   
   for (j in (1:length(chunk))) {
     Z_i[i,column+j-1] <- chunk[j]
-    }
+  }
   
 }
-
-
-
-  
-  
