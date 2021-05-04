@@ -581,11 +581,11 @@ for (j in 1:length(beta1_test)) {
     xxi    <- solve(t(x)%*%x)
     coefs  <- as.vector(xxi%*%xy)
     sigma2_est <- exp(coefs[1])
-    alpha_est <- 2*coefs[2]
+    zeta_est <- coefs[2]
     
     
     #for teacher sigma_hat is ok
-    diagonal_est <- xsim^alpha_est
+    diagonal_est <- (xsim^2)^zeta_est
     #sigma_omega is the asymptotic variance of the OLS estimator
     sigma_omega_est <- matrix(0,T,T) 
     #I put back the diagonal element in the diagnonal  
