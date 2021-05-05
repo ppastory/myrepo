@@ -49,7 +49,8 @@ lg <- function(x)c(NA, x[1:(length(x)-1)])
 
 data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
-data  <- na.omit(data)
+data  <- na.omit(data) #Gere we loose an observation but we don't care it's fine
+#T = 29
 
 #We create the matrix D of dummies for each variable
 
@@ -128,7 +129,7 @@ for (i in (1:(T-2))) {
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
   #print(chunk)
-  exog_var <- x_fd_s[i,1:3]
+  exog_var <- x_fd_s[i,2:4]
   
   endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
   print(endog_exog)
@@ -140,44 +141,62 @@ for (i in (1:(T-2))) {
   column <- column + i +3
 }
 
-
-W_1 <- t(Z_1)%*%H%*%Z_1 #achtung !!! this still needs to be inversed
-
 Z_1 
 
-W <- W_1
+x_1 <- exog_var
+
+x_i <- x_1
+
+
+Z_i <- matrix(0,T-2,n_inst+(27*3))
+
 Z <- Z_1
+
+iter <- 2 #
 
 #We start at the column 30 and go by chunks of 29
 #but we will only loop over the Y chunks until 27 !
 #that is because yi27 will instrument delta_ei29
 for (sst in seq(30, length(y), T)) {
   
-  print(sst)
+  #print(sst)
   #The second chunk for example goes from 30 to 
   #30 + 27 
   y_i <- y[sst:(sst+27)]
   
+  x_i <- x_fd_s[(sst-iter):((sst-iter)+26),2:4]
+  
   #The matrix of instruments has size 27 x 378 ! 
   #each time period we use more lags
-  Z_i <- matrix(0,T-2,n_inst)
-  column <-1 
+  Z_i <- matrix(0,T-2,n_inst+(27*3))
+  
+  column <-2 
+  #Next time I will start in row 57 which is row 59 -2 
+  #and so one the keeps increase by 1 for each loop, this -2 takes the name iter
+  iter <- iter + 2
   
   for (i in (1:(T-2))) {
-    print(i)
-    chunk <- as.numeric(y_i[1:i])
-    column <- column + i -1
     
-    for (j in (1:length(chunk))) {
-      Z_i[i,column+j-1] <- chunk[j]
+    #Chunk is the bunch of yi that we are going to put in the Z_i matrix
+    chunk <- as.numeric(y_1[1:i])
+    #print(chunk)
+    exog_var <- x_i[i,]
+    
+    
+    endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
+
+    for (j in (1:length(endog_exog))) {
+      Z_i[i,(column+j-2)] <- endog_exog[j]
     }
-    
+    column <- column + i +3
   }
   
   
   Z <- rbind(Z,Z_i)
   
 }
+
+
 
 n_inst_var <- N*(T-2)
 
@@ -194,30 +213,8 @@ H
 
 W_notinv <- t(Z) %*% H %*% Z 
 #we have the big W optimal
-W_opt <- solve(W_notinv)
+W_opt <- solve(W_notinv,tol = 1e-22)
 
-#Now we need to create the big X and Y matrix but it is not simply x and y
-
-#Remember we can only start instrumenting in period 3 until period 29 
-#this means that we take the 27 last periods for every state!
-#for every state I need to kill the first 2 periods
-data_s <- data
-
-data_s[data_s == 65] <- NA
-data_s <- na.omit(data_s)
-
-y_fd_s <- as.matrix(data_s[,15])
-x_fd_s <- as.matrix(data_s[,16:19])
-
-#we have all the ingredients we need to compute our gamma
-
-big_Z <- as.matrix(cbind(Z,x_fd_s[,1],x_fd_s[,2],x_fd_s[,3]))
-
-Z <- big_Z
-
-W_notinv <- t(Z) %*% H %*% Z 
-#we have the big W optimal
-W_opt <- solve(W_notinv)
 
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
