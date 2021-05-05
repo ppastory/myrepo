@@ -15,7 +15,7 @@ getwd()
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
-setwd("C:/Users/qiszhang/Documents/programming/myrepo") #Windows
+setwd("C:/Users/ppastory/Documents/programming/myrepo") #Windows
 
 ## Set output file directory: change to your own directory
 #I want the output directory to be the same 
@@ -41,11 +41,13 @@ source("Case4_GMMd estimator.R")
 #Case 4.1. Panel data estimator                             ########
 ####################################################################
 # Read from file
-data  <- read_excel("Data_Baltagi.xlsx")
+data    = read.table("Data_Baltagi.csv", header = TRUE,sep = ";")
+
+colnames(data)[1] <- c('state')
 
 lg <- function(x)c(NA, x[1:(length(x)-1)])
 
-data$ln.C_it_1 <- unlist(tapply(data$`ln C_it`, data$state, lg))
+data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
 data  <- na.omit(data)
 
@@ -131,7 +133,7 @@ sigma2 <- as.vector(t(res)%*%res)/df
   
 ##First let's first difference our data!
   
-data <- transform(data, dlnC_it = ave(`ln C_it`, state, FUN = function(x) c(NA, diff(x))))
+data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
@@ -144,8 +146,6 @@ data<-na.omit(data)
 N <-   length(unique(data$state))
 
 #we loose an obs with lag and another one with difference
-
-
 
 y_fd <- as.matrix(data[,15])
 x_fd <- as.matrix(data[,16:19])
@@ -161,13 +161,41 @@ n_inst <- sum(yit)
 
 #The chunks have size 27 !!!
 #because yi27 is the last instrument of delta_ei29
-y_1 <- y[1:T-2]
+y_1 <- y[1:(T-2)]
+
+#I need to take the X_fd_s, the X that loose the first 2 observation by individuals
+#because you do FD and because you need a lag (we start in delta xi3 basically)
+
+data_s <- data
+
+data_s[data_s == 65] <- NA
+data_s <- na.omit(data_s)
+
+y_fd_s <- as.matrix(data_s[,15])
+
+#we what the order of x_fd_s to be the same as in the Z_i matrix
+#and as in the book
+x_fd_s <- as.matrix(data_s[,16:19])
+
+x_fd_s[,1] <- as.matrix(data_s[,19])
+x_fd_s[,2] <- as.matrix(data_s[,16])
+x_fd_s[,3] <- as.matrix(data_s[,18])
+x_fd_s[,4] <- as.matrix(data_s[,17])
+#We check the names and they are wrong so let's change the column names
+colnames(x_fd_s)[1] <- colnames(x_fd_s)[4]
+colnames(x_fd_s)[2] <- c('dlnP_it')
+colnames(x_fd_s)[3] #it's ok
+colnames(x_fd_s)[4] <- c('dlnPn_it')
+x_fd_s
+
+#The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 27 = ninst
+#but now for each chunk 1 + 2 + ... + 27, we had the 3 explanatory variables as instrument
 
 Z_1 <- matrix(0,T-2,n_inst)
 column <-1 
 
 for (i in (1:(T-2))) {
-  print
+  
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
   print(chunk)
@@ -245,13 +273,20 @@ data_s[data_s == 65] <- NA
 data_s <- na.omit(data_s)
 
 y_fd_s <- as.matrix(data_s[,15])
-#x_fd_s <- as.matrix(data_s[,16:19])
-x_fd_s <- as.matrix(data_s[,19])
+x_fd_s <- as.matrix(data_s[,16:19])
 
 #we have all the ingredients we need to compute our gamma
 
-gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
+big_Z <- as.matrix(cbind(Z,x_fd_s[,1],x_fd_s[,2],x_fd_s[,3]))
 
+Z <- big_Z
+
+W_notinv <- t(Z) %*% H %*% Z 
+#we have the big W optimal
+W_opt <- solve(W_notinv)
+
+
+gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
 
 
