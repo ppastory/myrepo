@@ -284,6 +284,7 @@ W_opt <- solve(W_notinv, tol = 1e-20)
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
+y <- y_fd_s
 yhat   <- as.vector(x_fd_s%*%gamma)
 res    <- y-yhat
 
@@ -304,7 +305,7 @@ std_Ct_1 <- sqrt(var_g[4])
 
 
 #let's say that I want max 3 lags
-max_lag <- 3
+max_lag <- 4
 
 el <- max_lag-1
 #Let's loop over the states and create our big matrix
@@ -324,18 +325,23 @@ for (i in (1:(T-2))) {
   chunk <- as.numeric(y_1[1:i])
   #print(chunk)
   
-  if (length(chunk) < 2){
-    Z_1[i,column] <- chunk
-    column <- column + 1
+  if (length(chunk) < (max_lag-1)){
+    for (j in 1:length(chunk)){
+      Z_1[i,column+j-1] <- chunk[j]
+    }
+   # Z_1[i,column] <- chunk
+    column <- column + i
     
   } else {
     
     print(column)
     el <- max_lag-1
     
-    Z_1[i,column] <- tail(chunk,el)[1]
-    Z_1[i,column+1] <- tail(chunk,el)[2]
-    column <- column + 2
+    for (j in 1:length(chunk)){
+      Z_1[i,column+j-1] <- tail(chunk,el)[j]
+    }
+    
+    column <- column + (max_lag-1)
   }
 }
 
@@ -358,7 +364,7 @@ for (sst in seq(30, length(y), T)) {
   column <-1 
   
   for (i in (1:(T-2))) {
-    chunk <- as.numeric(y_1[1:i])
+    chunk <- as.numeric(y_i[1:i])
     #print(chunk)
     
     if (length(chunk) < 2){
