@@ -412,9 +412,11 @@ ttest_matrix <- matrix(0,repl, length(beta1_test))
 for (j in 1:length(beta1_test)) {
   
   for (i in 1:repl) {
-    print(i)
-    sigma2 <-1
     #stochastic X: X = rnorm(T,0,sigma2)
+    sigma2 <- 1
+    alpha <- 4
+    
+    diagonal <- xsim^alpha
     #let's get some errors, we define sigma 2 =1 earlier
     e <- rnorm(T,0,sd = sqrt(diagonal))
     #e <- rnorm(T,0,diagonal)
