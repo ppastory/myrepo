@@ -137,7 +137,7 @@ data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, 
 data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
-data <-   transform(data, dlnC_it_1 = ave(ln.C_it, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(NA, diff(x))))
 
 data<-na.omit(data)
 
@@ -198,7 +198,7 @@ for (i in (1:(T-2))) {
   
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
-  print(chunk)
+  #print(chunk)
   column <- column + i -1
   
   for (j in (1:length(chunk))) {
@@ -219,7 +219,7 @@ Z <- Z_1
 #that is because yi27 will instrument delta_ei29
 for (sst in seq(30, length(y), T)) {
 
-  print(sst)
+  #print(sst)
   #The second chunk for example goes from 30 to 
   #30 + 27 
   y_i <- y[sst:(sst+27)]
@@ -230,7 +230,7 @@ for (sst in seq(30, length(y), T)) {
   column <-1 
 
   for (i in (1:(T-2))) {
-    print(i)
+    #print(i)
     chunk <- as.numeric(y_i[1:i])
     column <- column + i -1
   
@@ -276,17 +276,25 @@ y_fd_s <- as.matrix(data_s[,15])
 x_fd_s <- as.matrix(data_s[,16:19])
 
 #we have all the ingredients we need to compute our gamma
-
-big_Z <- as.matrix(cbind(Z,x_fd_s[,1],x_fd_s[,2],x_fd_s[,3]))
+big_Z <- as.matrix(cbind(x_fd_s[,1],x_fd_s[,2],x_fd_s[,3],Z))
 
 Z <- big_Z
 
 W_notinv <- t(Z) %*% H %*% Z 
 #we have the big W optimal
-W_opt <- solve(W_notinv)
-
+W_opt <- solve(W_notinv, tol = 1e-20)
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
 
 
+
+x <- x_fd
+y <- y_fd_s
+
+xy     <- t(x)%*%y
+xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+coefs  <- as.vector(xxi%*%xy)
+
+
+Z %*% W_opt 
