@@ -101,7 +101,7 @@ OLS_own = function (y,x,w)
     
     yhat   <- as.vector(x%*%coefs)
     res    <- y-yhat
-    #sigma2 <- as.vector(t(res)%*%res)
+    #sigma2 <- as.vector(t(res)%*%res) new case 1 function
     sigma2 <- as.vector(t(res)%*%res)/df
   
     
