@@ -560,6 +560,11 @@ for (j in 1:length(beta1_test)) {
     print(i)
     #stochastic X: X = rnorm(T,0,sigma2)
     #let's get some errors, we define sigma 2 =1 earlier
+    sigma2 <- 1
+    alpha <- 4
+    
+    diagonal <- xsim^alpha
+    
     e <- rnorm(T,0,sd = sqrt(diagonal))
     #e <- rnorm(T,0,diagonal)  
     
