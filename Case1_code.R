@@ -85,14 +85,9 @@ res2       <- res%*%t(res)
 #I take away the diagonals
 diagonal <- diag(res2) 
 #I create a matrix of 0 of diam
-res2 <- matrix(0,nrow(res2), ncol(res2)) 
-#I put back the diagonal element in the diagnonals
-#but this time I take the inverse to get P
-diag(res2) <- 1/sqrt(diagonal)
-#res2 is sigma2 omega in the formulas
-P <- res2
-
-omega_1    <- t(P)%*%P
+omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
+#I put back the diagonal element in the diagnonal  
+diag(omega_1) <- 1/diagonal
 
 
 GLS_static = GLS_own (y_S,x_S,omega_1)
