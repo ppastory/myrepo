@@ -41,41 +41,20 @@ source("Case1_Functions.R")
 ####################################################################
 # Read from file
 data    = read.table("Data_Baltagi.csv", header = TRUE,sep = ";")
-lnC_it  = data$ln.C_it
-lnP_it  = data$ln.P_it
-lnPn_it = data$ln.Pn_it
-lnY_it  = data$ln.Y_it
 
-# Construct matrices (for static model)
-y_S<-as.vector(lnC_it)
-x_S<-as.matrix(cbind(Cnst=1,lnP_it,lnPn_it,lnY_it))
+colnames(data)[1] <- c('state')
 
-# Construct matrices (for dynamic model)
-pdt <- pdata.frame(data)            # use plm package to construct lag of lnC_it
-pdt$ln.C_itL1 <- lag(pdt$ln.C_it)
-pdt_noNaN     <- na.omit(pdt)
+lg <- function(x)c(NA, x[1:(length(x)-1)])
 
-lnC_it_D    <- pdt_noNaN$ln.C_it
-lnC_itL1_D  <- pdt_noNaN$ln.C_itL1
-lnP_it_D    <- pdt_noNaN$ln.P_it
-lnPn_it_D   <- pdt_noNaN$ln.Pn_it
-lnY_it_D    <- pdt_noNaN$ln.Y_it
+data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
-y_D<-as.vector(lnC_it_D)
-x_D<-as.matrix(cbind(Cnst=1,lnC_itL1_D,lnP_it_D,lnPn_it_D,lnY_it_D))
+data  <- na.omit(data)
 
-# Take first differences
-lnC_it_D_diff   = diff(lnC_it_D, differences = 1)
-lnC_itL1_D_diff = diff(lnC_itL1_D, differences = 1)
-lnP_it_D_diff   = diff(lnP_it_D, differences = 1)                                    # Take first differences                
-lnPn_it_D_diff  = diff(lnPn_it_D, differences = 1)
-lnY_it_D_diff   = diff(lnY_it_D, differences = 1)
+#We create the matrix D of dummies for each variable
 
-y_D_diff<-as.vector(lnC_it_D_diff)
-x_D_diff<-as.matrix(cbind(Cnst=1,lnC_itL1_D_diff,lnP_it_D_diff,lnPn_it_D_diff,lnY_it_D_diff))
+y_S <- as.matrix(data[,10])
 
-y_D_diff = na.omit(y_D_diff) #Remove NA's otherwise the OLS functions returns an error
-x_D_diff = na.omit(x_D_diff)
+x_S <- as.matrix(data[,11:14])
 
 #ok now we've got all the data we need!
 
@@ -86,7 +65,6 @@ x_D_diff = na.omit(x_D_diff)
 #My OLS function returns 2 things in a list
 
 OLS_static = OLS_own(y_S,x_S,0)
-OLS_static$residuals
 
 ####################################################################
 ###         Run OLS on static model with White correction        ###
@@ -128,7 +106,7 @@ res <- OLS_static$residuals
 k <- OLS_static$param
 
 #We have 30 error terms per states
-t <- 30
+t <- 29
 
 #There is one different sigma per state (46 states)
 sigma_i <- seq(1:46)
@@ -159,9 +137,44 @@ GLS_static = GLS_own (y_S,x_S,omega_hat)
 ##################################################################
 ###     Run OLS on dynamic model in first difference           ###
 ##################################################################
+data    = read.table("Data_Baltagi.csv", header = TRUE,sep = ";")
+
+colnames(data)[1] <- c('state')
+
+lg <- function(x)c(NA, x[1:(length(x)-1)])
+
+data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
+
+data  <- na.omit(data)
+
+#We create the matrix D of dummies for each variable
+
+y <- as.matrix(data[,10])
+
+x <- as.matrix(data[,11:14])
+
+##First let's first difference our data!
+
+data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(NA, diff(x))))
+
+data<-na.omit(data)
 
 
-OLS_dynamic = OLS_own(y_D_diff,x_D_diff,1)
+#Extract T and N
+
+N <-   length(unique(data$state))
+
+#we loose an obs with lag and another one with difference
+
+y_fd <- as.matrix(data[,15])
+x_fd <- as.matrix(data[,16:19])
+
+
+OLS_dynamic = OLS_own(y_fd,x_fd,1)
 
 ##################################################################
 ###     Run EGLS on dynamic model in first difference           ###
@@ -169,14 +182,14 @@ OLS_dynamic = OLS_own(y_D_diff,x_D_diff,1)
 
 
 
-OLS_dynamic = OLS_own(y_D_diff,x_D_diff,0)
+OLS_dynamic = OLS_own(y_fd,x_fd,0)
 
 res <- OLS_dynamic$residuals
 
 k <- OLS_dynamic$param
 
 #We have 29 error terms per states because we do first difference
-t <- 29
+t <- 28
 
 #There is one different sigma per state (46 states)
 sigma_i <- seq(1:46)
