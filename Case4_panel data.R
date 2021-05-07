@@ -271,10 +271,10 @@ data_s[data_s == 65] <- NA
 data_s <- na.omit(data_s)
 
 y_fd_s <- as.matrix(data_s[,15])
-x_fd_s <- as.matrix(data_s[,16:19])
+x_fd_s <- as.matrix(cbind(Cnst=1,data_s[,16:19]))
 
 #we have all the ingredients we need to compute our gamma
-big_Z <- as.matrix(cbind(x_fd_s[,1],x_fd_s[,2],x_fd_s[,3],Z))
+big_Z <- as.matrix(cbind(Cnst=1,x_fd_s[,1],x_fd_s[,2],x_fd_s[,3],Z))
 
 Z <- big_Z
 
@@ -284,20 +284,47 @@ W_opt <- solve(W_notinv, tol = 1e-20)
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
-y <- y_fd_s
+y_pred <- y_fd_s
 yhat   <- as.vector(x_fd_s%*%gamma)
-res    <- y-yhat
+res    <- y_pred-yhat
 
 sigma2 <- as.vector(t(res)%*%res)/2
 
 var_gamma <- sigma2* solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s)
 
-var_g <- diag(var_gamma)
 
-std_P <- sqrt(var_g[1])
-std_Pn <- sqrt(var_g[2])
-std_Y <- sqrt(var_g[3])
-std_Ct_1 <- sqrt(var_g[4])
+
+#std_P <- sqrt(var_g[1])
+#std_Pn <- sqrt(var_g[2])
+#std_Y <- sqrt(var_g[3])
+#std_Ct_1 <- sqrt(var_g[4])
+
+
+stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
+stdvs_BGMM_sys
+
+tstats_BGMM_sys <- gamma/stdvs_BGMM_sys
+tstats_BGMM_sys <- c(tstats_BGMM_sys)
+
+n  <- length(y_fd_s)
+k  <- ncol(x_fd_s)
+df <- n-k
+
+pvals_GGMM_sys   <- 2*(1-pt(abs(tstats_BGMM_sys),df))
+
+
+#save output
+names(gamma) <- colnames(x_fd_s)
+names(tstats_BGMM_sys) <- colnames(x_fd_s)
+
+#creating the table
+coefs  <- round(gamma,3)
+stdvs  <- round(stdvs_BGMM_sys,3)
+tstats <- round(tstats_BGMM_sys,3)
+pvals  <- round(pvals_GGMM_sys,3)
+
+
+out_pvals_BGMM_sys = cbind(coefs,stdvs,tstats,pvals)
 
 ###################################################
 ############Restrict the lag length###############
@@ -305,12 +332,13 @@ std_Ct_1 <- sqrt(var_g[4])
 
 
 #let's say that I want max 3 lags
-max_lag <- 4
+max_lag <- 5
 
 el <- max_lag-1
 #Let's loop over the states and create our big matrix
 
-n_inst <- max_lag*(T-2)
+n_inst <- sum(seq(1,(max_lag-1))) + ((T-2)-length(seq(1,(max_lag-1))))*(max_lag-1)
+  
 
 #The chunks have size 27 !!!
 #because yi27 is the last instrument of delta_ei29
@@ -337,7 +365,7 @@ for (i in (1:(T-2))) {
     print(column)
     el <- max_lag-1
     
-    for (j in 1:length(chunk)){
+    for (j in 1:(max_lag-1)){
       Z_1[i,column+j-1] <- tail(chunk,el)[j]
     }
     
@@ -364,22 +392,29 @@ for (sst in seq(30, length(y), T)) {
   column <-1 
   
   for (i in (1:(T-2))) {
-    chunk <- as.numeric(y_i[1:i])
+    
+    #Chunk is the bunch of yi that we are going to put in the Z_i matrix
+    chunk <- as.numeric(y_1[1:i])
     #print(chunk)
     
-    if (length(chunk) < 2){
-      Z_i[i,column] <- chunk
-      column <- column + 1
+    if (length(chunk) < (max_lag-1)){
+      for (j in 1:length(chunk)){
+        Z_i[i,column+j-1] <- chunk[j]
+      }
+      # Z_1[i,column] <- chunk
+      column <- column + i
       
     } else {
       
+      #print(column)
       el <- max_lag-1
       
-      Z_i[i,column] <- tail(chunk,el)[1]
-      Z_i[i,column+1] <- tail(chunk,el)[2]
-      column <- column + 2
+      for (j in 1:(max_lag-1)){
+        Z_i[i,column+j-1] <- tail(chunk,el)[j]
+      }
+      
+      column <- column + (max_lag-1)
     }
-    
   }
   
   
@@ -387,6 +422,7 @@ for (sst in seq(30, length(y), T)) {
   
 }
 
+#changing number of instrumeeents!
 n_inst_var <- N*(T-2)
 
 #Imagine our big H is very big -> we try to create 
@@ -397,11 +433,6 @@ diag(H) <- diagonal
 diag(H[-1,])<-offdiagonal
 diag(H[,-1])<-offdiagonal
 H
-
-
-W_notinv <- t(Z) %*% H %*% Z 
-#we have the big W optimal
-W_opt <- solve(W_notinv)
 
 #Now we need to create the big X and Y matrix but it is not simply x and y
 
@@ -414,16 +445,17 @@ data_s[data_s == 65] <- NA
 data_s <- na.omit(data_s)
 
 y_fd_s <- as.matrix(data_s[,15])
-x_fd_s <- as.matrix(data_s[,16:19])
+x_fd_s <- as.matrix(cbind(Cnst=1,data_s[,16:19]))
 
 #we have all the ingredients we need to compute our gamma
-big_Z <- as.matrix(cbind(x_fd_s[,1],x_fd_s[,2],x_fd_s[,3],Z))
+big_Z <- as.matrix(cbind(cbind(Cnst=1,x_fd_s[,1],x_fd_s[,2],x_fd_s[,3],Z)))
 
 Z <- big_Z
 
 W_notinv <- t(Z) %*% H %*% Z 
 #we have the big W optimal
 W_opt <- solve(W_notinv, tol = 1e-20)
+
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
