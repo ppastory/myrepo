@@ -162,5 +162,44 @@ GLS_static = GLS_own (y_S,x_S,omega_hat)
 
 
 OLS_dynamic = OLS_own(y_D_diff,x_D_diff,1)
+
+##################################################################
+###     Run EGLS on dynamic model in first difference           ###
+##################################################################
+
+
+
+OLS_dynamic = OLS_own(y_D_diff,x_D_diff,0)
+
+res <- OLS_dynamic$residuals
+
+k <- OLS_dynamic$param
+
+#We have 29 error terms per states because we do first difference
+t <- 29
+
+#There is one different sigma per state (46 states)
+sigma_i <- seq(1:46)
+
+
+#let's compute the sigma_i 
+for (i in 1:(length(res)/t)){
+  sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
+}
+#Maybe K is 46 but not sure
+
+#Now we create the diagonal of sigma_hat
+
+sigma_est<-rep(sigma_i,each=t)
+
+#now we create the matrix and put sigma_hat as the diagonal of that matrix
+
+omega_hat <- matrix(0,length(res), length(res)) 
+#I put back the diagonal element in the diagnonals
+diag(omega_hat) <- sigma_est
+
+omega_hat
+
+
 OLS_dynamic = GLS_own(y_D_diff,x_D_diff,sigma_est)
 
