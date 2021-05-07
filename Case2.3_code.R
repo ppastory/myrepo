@@ -66,7 +66,7 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
 
 ################################################
-####Let's start with OLS                  ######
+####OLS Bootstrap only using one MC draw  ######
 ################################################
 
 
@@ -117,28 +117,39 @@ ttest_matrixbw <- matrix(0,repl, length(beta1_test))
 
 data <- cbind(Y,X)
 
-
 for (j in 1:length(beta1_test)) {
   
   for (i in 1:brepl) {
-
+    
+    #1 pair bootstrap 
+    #I am taking our a boostrap pair of Y and X
     boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
     
+    #My y in the pair is the last column
     Ybp<-boot_pair[,1]
+    #My x in the pair is everything but the last column
     Xbp<-boot_pair[,-1]
     
+    #let's compute OLS with our pair-wise sample
     OLS_out <- OLS_own(Ybp,Xbp,0) 
     
     
     beta_0_0LSbp[i] <- OLS_out$estimation[1,1]
     beta_1_OLSbp[i] <- OLS_out$estimation[2,1]
     
-    stdvs_0bp[i] <- OLS_out$estimation[1,2]/sqrt(T)
-    stdvs_1bp[i] <- OLS_out$estimation[2,2]/sqrt(T)
-    #
+    #the mean of this standard-errors from pair-sample will be estimated standard errors
+    stdvs_0bp[i] <- OLS_out$estimation[1,2]
+    stdvs_1bp[i] <- OLS_out$estimation[2,2]
+    #Compute the t test with these standard errors
     ttest_matrixbp[i,j] <- (beta_0_0LSbp[i] - beta_1_OLSbp[j])/stdvs_1bp[i] #divided by sqrt T
     
+    
+    #2 Wild bootstrap 
+    #I generate the sample of shocks to get some stochasticity
+    #I generate 1 and -1
     shock <- sample(c(-1,1), replace=TRUE, size=200)
+    
+    #let's get the errors
     errors_b <- shock*e
     
     #now I can have my y !
