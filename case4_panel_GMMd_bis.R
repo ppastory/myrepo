@@ -67,7 +67,7 @@ data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, 
 data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
-data <-   transform(data, dlnC_it_1 = ave(ln.C_it, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(NA, diff(x))))
 
 data<-na.omit(data)
 
@@ -219,5 +219,5 @@ W_opt <- solve(W_notinv,tol = 1e-22)
 
 gamma <- solve(t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% x_fd_s) %*%  t(x_fd_s) %*% Z %*% W_opt %*% t(Z) %*% y_fd_s
 
-
+t(Z) %*% y_fd_s
 
