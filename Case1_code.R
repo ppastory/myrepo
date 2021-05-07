@@ -54,7 +54,7 @@ data  <- na.omit(data)
 
 y_S <- as.matrix(data[,10])
 
-x_S <- as.matrix(data[,11:14])
+x_S <- as.matrix(cbind(Cnst=1, data[,11:14]))
 
 #ok now we've got all the data we need!
 
@@ -166,7 +166,7 @@ N <-   length(unique(data$state))
 #we loose an obs with lag and another one with difference
 
 y_fd <- as.matrix(data[,15])
-x_fd <- as.matrix(data[,16:19])
+x_fd <- as.matrix(cbind(Cnst=1,data[,16:19]))
 
 
 OLS_dynamic = OLS_own(y_fd,x_fd,1)
@@ -209,5 +209,5 @@ diag(omega_hat) <- sigma_est
 omega_hat
 
 
-OLS_dynamic = GLS_own(y_D_diff,x_D_diff,sigma_est)
+OLS_dynamic = GLS_own(y_fd,x_fd,omega_hat)
 
