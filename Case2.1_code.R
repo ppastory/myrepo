@@ -231,7 +231,7 @@ size_beta1 <- mean(rej_matrix[,1])
 #size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
 #this is the table in which you have all beta_0
