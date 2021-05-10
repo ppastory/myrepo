@@ -42,12 +42,11 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have a ok sample
-T <- 200
+T <- 2500
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
-#df is the number of degrees of freedom
-df <- 1
+repl <- 2000 #less number of replication to work on the code
+
 
 ############################################
 ######### Initialise Matrix ################
@@ -93,7 +92,7 @@ e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
 #now I can have my y !
 Y <- X%*%beta + e
 #bootstrap replication
-brepl <- 50
+brepl <- 100
 
 #I am initialising the vectors in which beta and other stuff will arrive -Pairwise
 beta_0_0LSbp <- rep(0,brepl)
@@ -138,6 +137,7 @@ for (j in 1:length(beta1_test)) {
     beta_1_OLSbp[i] <- OLS_out$estimation[2,1]
     
     #the mean of this standard-errors from pair-sample will be estimated standard errors
+    #This needs to be done manually because of sl 37
     stdvs_0bp[i] <- OLS_out$estimation[1,2]
     stdvs_1bp[i] <- OLS_out$estimation[2,2]
     #Compute the t test with these standard errors
@@ -181,8 +181,8 @@ beta_1_barp <- mean(beta_1_OLSbp)
 #let's get the numerical standard errors
 #let's get the numerical standard errors -> truuuue
 
-var_0_nump <- var(beta_0_0LSbp)/T ##divide by T
-var_1_nump <- var(beta_1_OLSbp)/T
+var_0_nump <- var(beta_0_0LSbp) 
+var_1_nump <- var(beta_1_OLSbp)
 
 stdvs_0_nump <- sqrt(var_0_nump)
 stdvs_1_nump <- sqrt(var_1_nump)
@@ -196,8 +196,8 @@ beta_1_barw <- mean(beta_1_OLSbw)
 #let's get the numerical standard errors
 #let's get the numerical standard errors -> truuuue
 
-var_0_numw <- var(beta_0_0LSbw)/T ##divide by T
-var_1_numw <- var(beta_1_OLSbw)/T
+var_0_numw <- var(beta_0_0LSbw)
+var_1_numw <- var(beta_1_OLSbw)
 
 stdvs_0_numw <- sqrt(var_0_numw)
 stdvs_1_numw <- sqrt(var_1_numw)
@@ -264,7 +264,7 @@ size_beta1bp <- mean(rej_matrixbp[,1])
 #size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1bp <- 1 -colMeans(rej_matrixbp[,2:5])
+power_beta1bp <- colMeans(rej_matrixbp[,2:5])
 #power_beta1
 
 
@@ -303,7 +303,7 @@ size_beta1bw <- mean(rej_matrixbw[,1])
 #size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1bw <- 1 -colMeans(rej_matrixbw[,2:5])
+power_beta1bw <- colMeans(rej_matrixbw[,2:5])
 #power_beta1
 
 
