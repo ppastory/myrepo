@@ -84,14 +84,16 @@ res2       <- res%*%t(res)
 #the non-diagnonal elemets of res2 need to have 0
 #I take away the diagonals
 diagonal <- diag(res2) 
-#I create a matrix of 0 of diam
-omega_1 <- matrix(0,nrow(res2), ncol(res2)) 
-#I put back the diagonal element in the diagnonal  
-diag(omega_1) <- 1/diagonal
+#I create a matrix of 0 of diag
+P <- matrix(0,nrow(res2), ncol(res2)) 
 
+diag(P) <- sqrt(diagonal)
 
-GLS_static = GLS_own (y_S,x_S,omega_1)
+omega_1bis <- t(P) %*% P
 
+#omega_minus1 <- solve(omega_1)
+
+GLS_static <- GLS_own(y_S,x_S,omega_1bis)
 
 ####################################################################
 ###                Run EGLS on static model                       ###
@@ -104,29 +106,26 @@ k <- OLS_static$param
 t <- 29
 
 #There is one different sigma per state (46 states)
-sigma_i <- seq(1:46)
+sigma2_i <- seq(1:46)
 
 
 #let's compute the sigma_i 
 for (i in 1:(length(res)/t)){
-  sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
+  sigma2_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
 }
 #Maybe K is 46 but not sure
 
 #Now we create the diagonal of sigma_hat
 
-sigma_est<-rep(sigma_i,each=t)
+sigma2_est<-rep(sigma2_i,each=t)
 
 #now we create the matrix and put sigma_hat as the diagonal of that matrix
 
 omega_hat <- matrix(0,length(res), length(res)) 
 #I put back the diagonal element in the diagnonals
-diag(omega_hat) <- sigma_est
-
-omega_hat
+diag(omega_hat) <- sigma2_est
 
 GLS_static = GLS_own (y_S,x_S,omega_hat)
-
 
 
 ##################################################################
@@ -169,7 +168,7 @@ y_fd <- as.matrix(data[,15])
 x_fd <- as.matrix(cbind(Cnst=1,data[,16:19]))
 
 
-OLS_dynamic = OLS_own(y_fd,x_fd,1)
+OLS_dynamic = OLS_own(y_fd,x_fd,0)
 
 ##################################################################
 ###     Run EGLS on dynamic model in first difference           ###
