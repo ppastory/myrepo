@@ -226,7 +226,7 @@ size_beta1 <- mean(rej_matrix[,1])
 #there is a size bias if the critical values are wrong !
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
 #Store the result for OLS
@@ -370,7 +370,7 @@ size_beta1 <- mean(rej_matrix[,1])
 #there is a size bias if the critical values are wrong !
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
 
@@ -428,9 +428,12 @@ for (j in 1:length(beta1_test)) {
     
     diagonal <- xsim^alpha
     #sigma_omega is the asymptotic variance of the OLS estimator
-    sigma_omega <- matrix(0,T,T) 
+    P <- matrix(0,T,T) 
     #I put back the diagonal element in the diagnonal  
-    diag(sigma_omega) <- 1/diagonal
+    
+    diag(P) <- sqrt(diagonal)
+    
+    sigma_omega <- t(P) %*% P
     
     #omega is known
     GLS_static = GLS_own(Y,X,sigma_omega)
@@ -519,7 +522,7 @@ size_beta1 <- mean(rej_matrix[,1])
 #there is a size bias if the critical values are wrong !
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
 #Store the result for OLS with White
@@ -712,7 +715,7 @@ size_beta1 <- mean(rej_matrix[,1])
 #size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- 1 -colMeans(rej_matrix[,2:5])
+power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
 
