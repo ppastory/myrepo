@@ -113,7 +113,7 @@ for (j in 1:length(beta1_test)) {
 
   for (i in 1:repl) {
   #stochastic X: 
-    #X = rnorm(T,0,sigma2)
+    #X <- rnorm(T,0,sigma2)
   #let's get some errors, we define sigma 2 =1 earlier
   e <- rnorm(T,0,sigma2)
   #now I can have my y !
