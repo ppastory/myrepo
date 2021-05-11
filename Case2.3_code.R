@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have a ok sample
-T <- 2500
+T <- 500
 
 #repl number of replication
-repl <- 2000 #less number of replication to work on the code
+repl <- 1000 #less number of replication to work on the code
 
 
 ############################################
@@ -138,17 +138,19 @@ for (j in 1:length(beta1_test)) {
     #2 Wild bootstrap 
     #I generate the sample of shocks to get some stochasticity
     #I generate 1 and -1
-    shock <- sample(c(-1,1), replace=TRUE, size=2500)
+    shock <- sample(c(-1,1), replace=TRUE, size=200)
     
     #I put a shock to the residuals of the original data
-    e_b <- sample(e, replace=TRUE, size=2500)
+    e_b <- sample(e, replace=TRUE, size=200)
     #let's get the errors: I need element-wise multiplication
     errors_b <- shock*e_b
     
-    #now I can have my y !
-    Y_b <- X%*%beta + errors_b
+    X_b <- as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
     
-    OLS_out <- OLS_own(Y_b,X,0) 
+    #now I can have my y !
+    Y_b <- X_b%*%beta + errors_b
+    
+    OLS_out <- OLS_own(Y_b,X_b,0) 
     
     beta_0_0LSbw[b] <- OLS_out$estimation[1,1]
     beta_1_OLSbw[b] <- OLS_out$estimation[2,1]
@@ -252,17 +254,20 @@ for (j in 1:length(beta1_test)) {
         #2 Wild bootstrap 
         #I generate the sample of shocks to get some stochasticity
         #I generate 1 and -1
-        shock <- sample(c(-1,1), replace=TRUE, size=2500)
+        shock <- sample(c(-1,1), replace=TRUE, size=200)
         
         #I put a shock to the residuals of the original data
-        e_b <- sample(e, replace=TRUE, size=2500)
+        e_b <- sample(e, replace=TRUE, size=200)
         #let's get the errors: I need element-wise multiplication
         errors_b <- shock*e_b
         
-        #now I can have my y !
-        Y_b <- X%*%beta + errors_b
+        X_b <- as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
         
-        OLS_out <- OLS_own(Y_b,X,0) 
+        
+        #now I can have my y !
+        Y_b <- X_b%*%beta + errors_b
+        
+        OLS_out <- OLS_own(Y_b,X_b,0) 
         
         beta_0_0LSbw[b] <- OLS_out$estimation[1,1]
         beta_1_OLSbw[b] <- OLS_out$estimation[2,1]
@@ -339,8 +344,8 @@ colnames(ttest_matrixbw) <- c(1,0.95,0.90,0.75,0.5)
 #A. Estimated standard error#
 ####
 
-stdvs_0_est_MC <- mean(stdvs_0)
-stdvs_1_est_MC <- mean(stdvs_1)
+stdvs_0_est_MC <- mean(stdvs_0_OLS)
+stdvs_1_est_MC <- mean(stdvs_1_OLS)
 
 stdvs_0_est_BP <- mean(stdvs_0bp)
 stdvs_1_est_BP <- mean(stdvs_1bp)
