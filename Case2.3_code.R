@@ -79,13 +79,14 @@ y_bar <- rep(0,repl)
 b_0 <- 10
 b_1 <- 1
 sigma2 <- 1
-alpa <- 4
+alpha <- 4
 #draw only once the X from a normal distribution
 xsim <- rnorm(T,0,1)
 #put the constant in X to have right dimension 
 X <- as.matrix(cbind(Cnst=1,xsim))
 #let's put the beta in matrix form
 beta <- as.matrix(rbind(b_0,b_1))
+
 #let's get some errors
 e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
 
@@ -102,8 +103,6 @@ beta_1_OLSbp <- rep(0,brepl)
 beta_0_0LSbw <- rep(0,brepl)
 beta_1_OLSbw <- rep(0,brepl)
 
-
-
 #grid of beta1 
 beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
 
@@ -118,52 +117,41 @@ data <- cbind(Y,X)
 
 for (j in 1:length(beta1_test)) {
   
-  for (i in 1:brepl) {
-    
+  
+  for (b in 1:brepl) {
+
     #1 pair bootstrap 
     #I am taking our a boostrap pair of Y and X
     boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
     
     #My y in the pair is the last column
-    Ybp<-boot_pair[,1]
+    Ybp<-as.matrix(boot_pair[,1])
     #My x in the pair is everything but the last column
     Xbp<-boot_pair[,-1]
     
     #let's compute OLS with our pair-wise sample
     OLS_out <- OLS_own(Ybp,Xbp,0) 
     
-    
-    beta_0_0LSbp[i] <- OLS_out$estimation[1,1]
-    beta_1_OLSbp[i] <- OLS_out$estimation[2,1]
-    
-    #the mean of this standard-errors from pair-sample will be estimated standard errors
-    #This needs to be done manually because of sl 37
-    stdvs_0bp[i] <- OLS_out$estimation[1,2]
-    stdvs_1bp[i] <- OLS_out$estimation[2,2]
-    #Compute the t test with these standard errors
-    ttest_matrixbp[i,j] <- (beta_0_0LSbp[i] - beta_1_OLSbp[j])/stdvs_1bp[i] #divided by sqrt T
-    
+    beta_0_0LSbp[b] <- OLS_out$estimation[1,1]
+    beta_1_OLSbp[b] <- OLS_out$estimation[2,1]
     
     #2 Wild bootstrap 
     #I generate the sample of shocks to get some stochasticity
     #I generate 1 and -1
-    shock <- sample(c(-1,1), replace=TRUE, size=200)
+    shock <- sample(c(-1,1), replace=TRUE, size=2500)
     
-    #let's get the errors
-    errors_b <- shock*e
+    #I put a shock to the residuals of the original data
+    e_b <- sample(e, replace=TRUE, size=2500)
+    #let's get the errors: I need element-wise multiplication
+    errors_b <- shock*e_b
     
     #now I can have my y !
     Y_b <- X%*%beta + errors_b
     
     OLS_out <- OLS_own(Y_b,X,0) 
     
-    beta_0_0LSbw[i] <- OLS_out$estimation[1,1]
-    beta_1_OLSbw[i] <- OLS_out$estimation[2,1]
-    
-    stdvs_0bw[i] <- OLS_out$estimation[1,2]/sqrt(T)
-    stdvs_1bw[i] <- OLS_out$estimation[2,2]/sqrt(T)
-    
-    ttest_matrixbw[i,j] <- (beta_1_OLSbw[i] - beta1_test[j])/stdvs_1bw[i] #divided by sqrt T
+    beta_0_0LSbw[b] <- OLS_out$estimation[1,1]
+    beta_1_OLSbw[b] <- OLS_out$estimation[2,1]
     
     
   }
@@ -178,9 +166,8 @@ colnames(ttest_matrixbw) <- c(1,0.95,0.90,0.75,0.5)
 
 beta_0_barp <- mean(beta_0_0LSbp)
 beta_1_barp <- mean(beta_1_OLSbp)
-#let's get the numerical standard errors
-#let's get the numerical standard errors -> truuuue
 
+#let's get the numerical standard errors -> true ones
 var_0_nump <- var(beta_0_0LSbp) 
 var_1_nump <- var(beta_1_OLSbp)
 
@@ -193,8 +180,8 @@ stdvs_1_nump <- sqrt(var_1_nump)
 
 beta_0_barw <- mean(beta_0_0LSbw)
 beta_1_barw <- mean(beta_1_OLSbw)
-#let's get the numerical standard errors
-#let's get the numerical standard errors -> truuuue
+
+#let's get the numerical standard errors 
 
 var_0_numw <- var(beta_0_0LSbw)
 var_1_numw <- var(beta_1_OLSbw)
@@ -207,33 +194,221 @@ table_std_num <- cbind(stdvs_0_nump,stdvs_1_nump,stdvs_0_numw,stdvs_1_numw)
 colnames(table_std_num) <- c("pair std beta0","pair std beta1","wild std beta0","wild std beta1")
 table_std_num
 
+
+
+################################################
+####OLS Bootstrap only using many MC draw  ######
+################################################
+
+beta_0_OLS <- rep(0,repl)
+beta_1_OLS <- rep(0,repl)
+
+stdvs_0_OLS <- rep(0,repl)
+stdvs_1_OLS <- rep(0,repl)
+
+#For every MC simulation, I get an estimated beta and its standard errors !
+
+beta_0_barp<- rep(0,repl) 
+beta_1_barp<- rep(0,repl)
+
+stdvs_0bp<- rep(0,repl)
+stdvs_1bp<- rep(0,repl)
+
+beta_0_barw<- rep(0,repl)
+beta_1_barw<- rep(0,repl)
+
+stdvs_0bw<- rep(0,repl)
+stdvs_1bw<- rep(0,repl)
+
+for (j in 1:length(beta1_test)) {
+  #for each MC simulation -> I draw an X, a Y an error
+  for (i in 1:repl) {
+    #let's get some errors
+    e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
+    
+    #now I can have my y !
+    Y <- X%*%beta + e
+    
+    print(i)
+    
+      for (b in 1:brepl) {
+        print(b)
+        #1 pair bootstrap 
+        #I am taking our a boostrap pair of Y and X
+        boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
+        
+        #My y in the pair is the last column
+        Ybp<-as.matrix(boot_pair[,1])
+        #My x in the pair is everything but the last column
+        Xbp<-boot_pair[,-1]
+        
+        #let's compute OLS with our pair-wise sample
+        OLS_out <- OLS_own(Ybp,Xbp,0) 
+        
+        beta_0_0LSbp[b] <- OLS_out$estimation[1,1]
+        beta_1_OLSbp[b] <- OLS_out$estimation[2,1]
+        
+        
+        #2 Wild bootstrap 
+        #I generate the sample of shocks to get some stochasticity
+        #I generate 1 and -1
+        shock <- sample(c(-1,1), replace=TRUE, size=2500)
+        
+        #I put a shock to the residuals of the original data
+        e_b <- sample(e, replace=TRUE, size=2500)
+        #let's get the errors: I need element-wise multiplication
+        errors_b <- shock*e_b
+        
+        #now I can have my y !
+        Y_b <- X%*%beta + errors_b
+        
+        OLS_out <- OLS_own(Y_b,X,0) 
+        
+        beta_0_0LSbw[b] <- OLS_out$estimation[1,1]
+        beta_1_OLSbw[b] <- OLS_out$estimation[2,1]
+        
+        
+      }
+  
+    #Do the pairwise standard errors
+    
+    
+    #let's get the numerical standard errors -> true ones
+    var_0_nump <- var(beta_0_0LSbp) 
+    var_1_nump <- var(beta_1_OLSbp)
+    
+    stdvs_0_nump <- sqrt(var_0_nump)
+    stdvs_1_nump <- sqrt(var_1_nump)
+    
+    #I get a bootstrap beta  
+    beta_0_barp[i] <- mean(beta_0_0LSbp)
+    beta_1_barp[i] <- mean(beta_1_OLSbp)
+    
+    #the mean of this standard-errors from pair-sample will be the estimated standard errors
+    #This needs to be done manually because of sl 37
+    #the function takes into account the degree correction which inflates the variance
+    #-> it is not necessary to do it manually
+    stdvs_0bp[i] <- stdvs_0_nump
+    stdvs_1bp[i] <- stdvs_1_nump
+    #Compute the t test with these standard errors
+    ttest_matrixbp[i,j] <- (beta_1_barp[i] - beta1_test[j])/stdvs_1bp[i] 
+    
+    ###Do the wild standard errors
+    #let's get the numerical standard errors 
+    
+    var_0_numw <- var(beta_0_0LSbw)
+    var_1_numw <- var(beta_1_OLSbw)
+    
+    stdvs_0_numw <- sqrt(var_0_numw)
+    stdvs_1_numw <- sqrt(var_1_numw)
+    
+    #For every Monte-carlo I get a Wild Bootstrap std errors
+    stdvs_0bw[i] <- stdvs_0_nump
+    stdvs_1bw[i] <- stdvs_1_nump
+    
+    #I get a bootstrap beta  
+    beta_0_barw[i] <- mean(beta_0_0LSbw)
+    beta_1_barw[i] <- mean(beta_1_OLSbw) 
+    
+    
+    #And I get a t stat based on the bootstrap
+    ttest_matrixbw[i,j] <- (beta_1_barw[i] - beta1_test[j])/stdvs_1bw[i] 
+    
+    
+    #I need the MC estimated std errors
+    OLS_out <- OLS_own(Y,X,0)
+    
+    beta_0_OLS[i] <- OLS_out$estimation[1,1]
+    beta_1_OLS[i] <- OLS_out$estimation[2,1]
+    
+    #the mean of this standard-errors from pair-sample will be the estimated standard errors
+    #This needs to be done manually because of sl 37
+    #the function takes into account the degree correction which inflates the variance
+    #-> it is not necessary to do it manually
+    stdvs_0_OLS[i] <- OLS_out$estimation[1,2]
+    stdvs_1_OLS[i] <- OLS_out$estimation[2,2]
+    
+    
+    }   
+}
+
+colnames(ttest_matrixbp) <- c(1,0.95,0.90,0.75,0.5)
+colnames(ttest_matrixbw) <- c(1,0.95,0.90,0.75,0.5)
+
+#We want to check that the estimated standard error is unbiased
+#A. Estimated standard error#
+####
+
+stdvs_0_est_MC <- mean(stdvs_0)
+stdvs_1_est_MC <- mean(stdvs_1)
+
+stdvs_0_est_BP <- mean(stdvs_0bp)
+stdvs_1_est_BP <- mean(stdvs_1bp)
+
+stdvs_0_est_BW <- mean(stdvs_0bw)
+stdvs_1_est_BW <- mean(stdvs_1bw)
+
+####
+#B. True standard errors
+####
+
+###
+#B.1 Use an analytical formula
+###
+
+##Analytical OLS
+x<-X
+xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+var_01_ana  <- sigma2*(xxi)
+
+var_0_ana <- var_01_ana[1,1]
+var_1_ana <- var_01_ana[2,2]
+
+#the diagonal elements are the std of Betas
+stdvs_0_ana_OLS <- sqrt(var_01_ana[1,1])
+stdvs_1_ana_OLS <- sqrt(var_01_ana[2,2])
+
+
+##Analitical OLSW
+sigma2 <- 1
+alpha <- 4
+
+diagonal <- xsim^alpha
+#sigma_omega is the asymptotic variance of the OLS estimator
+sigma_omega <- matrix(0,T,T) 
+#I put back the diagonal element in the diagnonal  
+diag(sigma_omega) <- diagonal
+x <- X
+xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+cov_OLS <- xxi %*% t(x) %*% sigma_omega %*% x %*% xxi
+
+stdvs_0_ana_OLSW <- sqrt(cov_OLS[1,1])
+stdvs_1_ana_OLSW <- sqrt(cov_OLS[2,2])
+
+
+###
+#B.2 Numerical Beta (MS standard errors)
+###
+
+var_0_num <- var(beta_0_OLS)
+var_1_num <- var(beta_1_OLS)
+
+stdvs_0_numMC_OLS <- sqrt(var_0_num)
+stdvs_1_numMC_OLS <- sqrt(var_1_num)
+
+
+
+
 ###store the betas
 
-#first row of OLS
-table_beta0bp <- cbind(b_0,beta_0_barp,stdvs_0_anap,stdvs_0_nump,stdvs_0_barp)
-colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
+#beta_0 table
+table_beta0 <- cbind(b_0,stdvs_0_est_MC,stdvs_0_numMC_OLS,stdvs_0_est_BP,stdvs_0_est_BW,stdvs_0_ana_OLS,stdvs_0_ana_OLSW)
+colnames(table_beta0) <- c("population","estimated std MC","numerical MC std","estimated bootstrap pairwise","estimated wild bootstrap","analytical OLS","analytical OLSW")
 
-#first row of OLS
-table_beta1bp <- cbind(b_1,beta_1_barp,stdvs_1_anap,stdvs_1_nump,stdvs_1_barp)
-colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
+#beta_1 table
+table_beta1 <- cbind(b_1,stdvs_1_est_MC,stdvs_1_numMC_OLS,stdvs_1_est_BP,stdvs_1_est_BW,stdvs_1_ana_OLS,stdvs_1_ana_OLSW)
+colnames(table_beta0) <- c("population","estimated std MC","numerical MC std","estimated bootstrap pairwise","estimated wild bootstrap","analytical OLS","analytical OLSW")
 
-#first row of OLS
-table_beta0bw <- cbind(b_0,beta_0_barw,stdvs_0_anaw,stdvs_0_numw,stdvs_0_barw)
-colnames(table_beta0) <- c("population","estimated beta","analytical","numerical","estimated")
-
-#first row of OLS
-table_beta1bw <- cbind(b_1,beta_1_barw,stdvs_1_anaw,stdvs_1_numw,stdvs_1_barw)
-colnames(table_beta1) <- c("population","estimated beta","analytical","numerical","estimated")
-
-#pairwise beta
-beta_0_mat[1,] <- table_beta0bp 
-#wild beta
-beta_0_mat[2,] <- table_beta0bw 
-
-#pairwise beta
-beta_1_mat[1,] <- table_beta1bp 
-#wild beta
-beta_1_mat[2,] <- table_beta1bw 
 
 
 #Bootstap pairwise, size and power !!
@@ -311,11 +486,3 @@ power_beta1bw <- colMeans(rej_matrixbw[,2:5])
 #table with size and power
 sp_mat[2,] <- cbind(size_beta1bw,t(power_beta1bw))
 
-
-
-#table beta0
-beta_0_mat[1,] <- table_beta0 
-
-
-#table beta1
-beta_1_mat[1,] <-table_beta1
