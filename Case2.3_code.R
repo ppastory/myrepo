@@ -113,7 +113,7 @@ beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
 
 ttest_matrixbp <- matrix(0,repl, length(beta1_test))
 ttest_matrixbw <- matrix(0,repl, length(beta1_test))
-
+ttest_matrix  <- matrix(0,repl, length(beta1_test))
 
 data <- cbind(Y,X)
 
@@ -162,6 +162,8 @@ for (j in 1:length(beta1_test)) {
     
     
   }
+  
+  
   
 }
 
@@ -242,6 +244,7 @@ for (j in 1:length(beta1_test)) {
     OLS_out <- OLS_own(Y,X,0)
     res <- OLS_out$residuals
     
+    data <- cbind(Y,X)
     
     print(i)
     
@@ -278,7 +281,7 @@ for (j in 1:length(beta1_test)) {
         #as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
         
         #now I can have my y !
-        Y_b <- X%*%beta + errors_b
+        Y_b <- X_b%*%beta + errors_b
         
         OLS_out <- OLS_own(Y_b,X_b,0) 
         
@@ -288,6 +291,25 @@ for (j in 1:length(beta1_test)) {
         
       }
   
+    #I need the MC estimated std errors
+    OLS_out <- OLS_own(Y,X,0)
+    
+    beta_0_OLS[i] <- OLS_out$estimation[1,1]
+    beta_1_OLS[i] <- OLS_out$estimation[2,1]
+    
+    #the mean of this standard-errors from pair-sample will be the estimated standard errors
+    #This needs to be done manually because of sl 37
+    #the function takes into account the degree correction which inflates the variance
+    #-> it is not necessary to do it manually
+    stdvs_0_OLS[i] <- OLS_out$estimation[1,2]
+    stdvs_1_OLS[i] <- OLS_out$estimation[2,2]
+    
+    
+    ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1_OLS[i] 
+    
+    
+    
+    
     #Do the pairwise standard errors
     #let's get the numerical standard errors -> true ones
     var_0_nump <- var(beta_0_0LSbp) 
@@ -307,7 +329,7 @@ for (j in 1:length(beta1_test)) {
     stdvs_0bp[i] <- stdvs_0_nump
     stdvs_1bp[i] <- stdvs_1_nump
     #Compute the t test with these standard errors
-    ttest_matrixbp[i,j] <- (beta_1_barp[i] - beta1_test[j])/stdvs_1bp[i] 
+    ttest_matrixbp[i,j] <- ( beta_1_OLS[i] - beta1_test[j])/stdvs_1bp[i] 
     
     
     ###Do the wild standard errors
@@ -329,7 +351,7 @@ for (j in 1:length(beta1_test)) {
     
     
     #And I get a t stat based on the bootstrap
-    ttest_matrixbw[i,j] <- (beta_1_barw[i] - beta1_test[j])/stdvs_1bw[i] 
+    ttest_matrixbw[i,j] <- ( beta_1_OLS[i] - beta1_test[j])/stdvs_1bw[i] 
     
     
     #I need the MC estimated std errors
@@ -345,6 +367,8 @@ for (j in 1:length(beta1_test)) {
     stdvs_0_OLS[i] <- OLS_out$estimation[1,2]
     stdvs_1_OLS[i] <- OLS_out$estimation[2,2]
     
+    
+    ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1_OLS[i] 
     
     }   
 }
@@ -495,4 +519,89 @@ power_beta1bw <- colMeans(rej_matrixbw[,2:5])
 #Store the result for OLS
 #table with size and power
 sp_mat[2,] <- cbind(size_beta1bw,t(power_beta1bw))
+
+
+
+
+
+
+#C Compute size and power
+###
+
+ttest_matrix
+
+#loop over the t-tests and give me the Critical values for each one
+colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
+
+#let's do a matrix of critical values, alpha is 5%
+#the t statistics follows a student t with 2 degrees of freedom 
+
+CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
+
+rej_function <- function(ttest,cv){
+  if (abs(ttest) > cv){
+    return(1)
+  }else{
+    return(0)
+  }
+}
+
+
+#initialise matrix of rejection 
+rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
+#Lets store the 1 and 0 of rejection in a matrix
+for (j in 1:5){
+  rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
+}
+#this is the size, the mean of column 1 for which beta = 1
+size_beta1 <- mean(rej_matrix[,1])
+#there is a size bias if the critical values are wrong !
+
+#the power is P(non reject if Beta != 1) -> 1 - P(reject)
+power_beta1 <- colMeans(rej_matrix[,2:5])
+#power_beta1
+
+#Store the result for OLS
+#table with size and power
+
+#C Compute size and power
+###
+
+ttest_matrix1 <- ttest_matrixbw
+
+#loop over the t-tests and give me the Critical values for each one
+colnames(ttest_matrix1) <- c(1,0.95,0.90,0.75,0.5)
+
+#let's do a matrix of critical values, alpha is 5%
+#the t statistics follows a student t with 2 degrees of freedom 
+
+CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
+
+rej_function <- function(ttest,cv){
+  if (abs(ttest) > cv){
+    return(1)
+  }else{
+    return(0)
+  }
+}
+
+
+#initialise matrix of rejection 
+rej_matrix <- matrix(0,nrow(ttest_matrix1),ncol(ttest_matrix1))
+#Lets store the 1 and 0 of rejection in a matrix
+for (j in 1:5){
+  rej_matrix[,j]<-sapply(ttest_matrix1[,j],rej_function, cv= CV_beta1)
+}
+#this is the size, the mean of column 1 for which beta = 1
+size_beta1 <- mean(rej_matrix[,1])
+#there is a size bias if the critical values are wrong !
+
+#the power is P(non reject if Beta != 1) -> 1 - P(reject)
+power_beta1 <- colMeans(rej_matrix[,2:5])
+#power_beta1
+
+#Store the result for OLS
+#table with size and power
+
+
 
