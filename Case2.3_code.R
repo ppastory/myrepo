@@ -35,7 +35,7 @@ library(plm)
 source("Case1_Functions.R")
 
 ####################################################################
-#Case 2.2. MC with known form
+#Case 2.3. MC with unknown form
 ####################################################################
 
 #Setting the seeds so that the simulation gives us the same results
@@ -45,21 +45,14 @@ set.seed(123)
 T <- 500
 
 #repl number of replication
-repl <- 1000 #less number of replication to work on the code
+repl <- 1500 #less number of replication to work on the code
 
 
 ############################################
 ######### Initialise Matrix ################
 
-beta_0_mat <- matrix(0,4,5)
-colnames(beta_0_mat) <- c("population","estimated beta","std analytical","std numerical","std estimated")
 
-
-beta_1_mat <- matrix(0,4,5)
-colnames(beta_1_mat) <- c("population","estimated beta","std analytical","std numerical","std estimated")
-
-
-sp_mat <- matrix(0,4,5)
+sp_mat <- matrix(0,2,5)
 colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power B=0.5")
 
 
@@ -87,11 +80,20 @@ X <- as.matrix(cbind(Cnst=1,xsim))
 #let's put the beta in matrix form
 beta <- as.matrix(rbind(b_0,b_1))
 
-#let's get some errors
-e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
+#let's get some errors: they are heteroskedastic
+diagonal <- xsim^alpha
+#the errors are heteroskedastic
+e <- rnorm(T,0,sd = sqrt(diagonal))
+
 
 #now I can have my y !
 Y <- X%*%beta + e
+
+#we need the estimated residuals
+OLS_out <- OLS_own(Y,X,0)
+res <- OLS_out$residuals
+
+  
 #bootstrap replication
 brepl <- 100
 
@@ -123,6 +125,7 @@ for (j in 1:length(beta1_test)) {
     #1 pair bootstrap 
     #I am taking our a boostrap pair of Y and X
     boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
+    #by taking a pair of Y and x -> then x is not deterministic anymore
     
     #My y in the pair is the last column
     Ybp<-as.matrix(boot_pair[,1])
@@ -138,17 +141,19 @@ for (j in 1:length(beta1_test)) {
     #2 Wild bootstrap 
     #I generate the sample of shocks to get some stochasticity
     #I generate 1 and -1
-    shock <- sample(c(-1,1), replace=TRUE, size=200)
+    shock <- sample(c(-1,1), replace=TRUE, size=T)
     
     #I put a shock to the residuals of the original data
-    e_b <- sample(e, replace=TRUE, size=200)
+    e_b <- sample(res, replace=TRUE, size=T)
     #let's get the errors: I need element-wise multiplication
     errors_b <- shock*e_b
     
-    X_b <- as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
+    X_b <- X
+      
+    #as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
     
     #now I can have my y !
-    Y_b <- X_b%*%beta + errors_b
+    Y_b <- X%*%beta + errors_b
     
     OLS_out <- OLS_own(Y_b,X_b,0) 
     
@@ -225,16 +230,23 @@ stdvs_1bw<- rep(0,repl)
 for (j in 1:length(beta1_test)) {
   #for each MC simulation -> I draw an X, a Y an error
   for (i in 1:repl) {
-    #let's get some errors
-    e <- rnorm(T,0,sigma2) #if only you knew how the e are distributed ... !!!
-    
+
+    #let's get some errors: they are heteroskedastic
+    diagonal <- xsim^alpha
+    #the errors are heteroskedastic
+    e <- rnorm(T,0,sd = sqrt(diagonal))    
     #now I can have my y !
     Y <- X%*%beta + e
+    
+    #we need the estimated residuals
+    OLS_out <- OLS_own(Y,X,0)
+    res <- OLS_out$residuals
+    
     
     print(i)
     
       for (b in 1:brepl) {
-        print(b)
+        
         #1 pair bootstrap 
         #I am taking our a boostrap pair of Y and X
         boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
@@ -254,18 +266,19 @@ for (j in 1:length(beta1_test)) {
         #2 Wild bootstrap 
         #I generate the sample of shocks to get some stochasticity
         #I generate 1 and -1
-        shock <- sample(c(-1,1), replace=TRUE, size=200)
+        shock <- sample(c(-1,1), replace=TRUE, size=T)
         
         #I put a shock to the residuals of the original data
-        e_b <- sample(e, replace=TRUE, size=200)
+        e_b <- sample(res, replace=TRUE, size=T)
         #let's get the errors: I need element-wise multiplication
         errors_b <- shock*e_b
         
-        X_b <- as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
+        X_b <- X
         
+        #as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
         
         #now I can have my y !
-        Y_b <- X_b%*%beta + errors_b
+        Y_b <- X%*%beta + errors_b
         
         OLS_out <- OLS_own(Y_b,X_b,0) 
         
@@ -276,8 +289,6 @@ for (j in 1:length(beta1_test)) {
       }
   
     #Do the pairwise standard errors
-    
-    
     #let's get the numerical standard errors -> true ones
     var_0_nump <- var(beta_0_0LSbp) 
     var_1_nump <- var(beta_1_OLSbp)
@@ -298,6 +309,7 @@ for (j in 1:length(beta1_test)) {
     #Compute the t test with these standard errors
     ttest_matrixbp[i,j] <- (beta_1_barp[i] - beta1_test[j])/stdvs_1bp[i] 
     
+    
     ###Do the wild standard errors
     #let's get the numerical standard errors 
     
@@ -308,8 +320,8 @@ for (j in 1:length(beta1_test)) {
     stdvs_1_numw <- sqrt(var_1_numw)
     
     #For every Monte-carlo I get a Wild Bootstrap std errors
-    stdvs_0bw[i] <- stdvs_0_nump
-    stdvs_1bw[i] <- stdvs_1_nump
+    stdvs_0bw[i] <- stdvs_0_numw
+    stdvs_1bw[i] <- stdvs_1_numw
     
     #I get a bootstrap beta  
     beta_0_barw[i] <- mean(beta_0_0LSbw)
@@ -361,20 +373,8 @@ stdvs_1_est_BW <- mean(stdvs_1bw)
 #B.1 Use an analytical formula
 ###
 
-##Analytical OLS
-x<-X
-xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
-var_01_ana  <- sigma2*(xxi)
+##Analytical OLS with heteroskedasticity
 
-var_0_ana <- var_01_ana[1,1]
-var_1_ana <- var_01_ana[2,2]
-
-#the diagonal elements are the std of Betas
-stdvs_0_ana_OLS <- sqrt(var_01_ana[1,1])
-stdvs_1_ana_OLS <- sqrt(var_01_ana[2,2])
-
-
-##Analitical OLSW
 sigma2 <- 1
 alpha <- 4
 
@@ -387,9 +387,14 @@ x <- X
 xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
 cov_OLS <- xxi %*% t(x) %*% sigma_omega %*% x %*% xxi
 
-stdvs_0_ana_OLSW <- sqrt(cov_OLS[1,1])
-stdvs_1_ana_OLSW <- sqrt(cov_OLS[2,2])
+stdvs_0_ana_OLS <- sqrt(cov_OLS[1,1])
+stdvs_1_ana_OLS <- sqrt(cov_OLS[2,2])
 
+
+##Analytical OLSW
+OLS_std <- OLS_own(Y,X,1)
+stdvs_0_ana_OLSW <- OLS_std[1,2]
+stdvs_1_ana_OLSW <- OLS_std[2,2]
 
 ###
 #B.2 Numerical Beta (MS standard errors)
