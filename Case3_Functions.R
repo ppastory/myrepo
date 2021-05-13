@@ -25,13 +25,13 @@ GMM_own = function(y,x,z,w)
 #weighting matrix only for overidentified
   if (z==0) {
   
-    betahat = inv(t(x)%*%x)%*%t(x)%*%y
+    betahat = solve(t(x)%*%x)%*%t(x)%*%y
     
     reshat = y - x%*%betahat
     
     sigmahat2 = t(reshat)%*%reshat%*%(n-K)
     
-    xxi = inv(t(x)%*%x%*%inv(t(x)%*%x)%*%t(x)%*%x)
+    xxi = solve(t(x)%*%x%*%solve(t(x)%*%x)%*%t(x)%*%x)
     
     covarbeta = sigmahat2 * xxi
   
@@ -65,16 +65,16 @@ GMM_own = function(y,x,z,w)
     #assume exactly identified model so X and K matrix have the same dimensions
     #GIV also takes care of exactly identified see sl. 57
  
-    wmatrix = inv(t(z)%*%z) #when errors are iid 
+    wmatrix = solve(t(z)%*%z) #when errors are iid 
     
-    betahativ = inv(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%inv(t(z)%*%z)%*%z%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
     
     #compute GMM finite sample standard errors
     res = y - x%*%betahativ
     
     sigmahat2 = t(res)%*%res%*%(n-k)
     
-    xxi = inv(t(x)%*%z%*%inv(t(z)%*%z)%*%t(z)%*%x)
+    xxi = solve(t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%x)
     
     covarbetaiv = sigmahat2%*%xxi
     
@@ -103,9 +103,9 @@ GMM_own = function(y,x,z,w)
     
   #for one step GMM is always for iid errors, when not errors are not iid then choose for two step. 
   
-  wmatrix = inv(t(z)%*%z) #to compute sigma2omega
+  wmatrix = solve(t(z)%*%z) #to compute sigma2omega
   
-  betahativ = inv(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%inv(t(z)%*%z)%*%z%*%y
+  betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
   
   res = y - x%*%betahativ
   
@@ -119,7 +119,7 @@ GMM_own = function(y,x,z,w)
     
   sigma2omega = res2
           
-  betahativ = inv(t(x)%*%z%*%inv(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%inv(t(z)%*%sigma2omega%*%z)%*%t(z)%*%y
+  betahativ = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%y
     
   #compute GMM standard errors with White weighting matrix
   
@@ -127,7 +127,7 @@ GMM_own = function(y,x,z,w)
   
   sigmahat2 = t(res)%*%res%*%(n-k) #check if k is correct? Because we can have more than k parameters
   
-  xxi = inv(t(x)%*%z%*%inv(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)
+  xxi = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)
   
   covarbetaiv = sigmahat2%*%xxi
   
@@ -143,10 +143,10 @@ GMM_own = function(y,x,z,w)
   
   if (r>k) {
   
-  J1 = t(t(z)%*%res)%*%inv(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
+  J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
   
   #define z2 for a subset of instruments
-  J2 = t(t(z2)%*%res)%*%inv(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
+  J2 = t(t(z2)%*%res)%*%solve(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
   
   diffJ= J1 - J2
   
@@ -182,9 +182,9 @@ GMM_own = function(y,x,z,w)
     
     #compute Newey-West Weighting matrix i.e. HAC standard errors
     
-    wmatrix = inv(t(z)%*%z) #to compute sigma2omega
+    wmatrix = solve(t(z)%*%z) #to compute sigma2omega
     
-    betahativ = inv(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%inv(t(z)%*%z)%*%z%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
     
     res = y - x%*%betahativ
     
@@ -215,7 +215,7 @@ GMM_own = function(y,x,z,w)
     
     neweywestcovar = muxx + doublsum
     
-    betahativ = inv(t(x)%*%z%*%inv(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%inv(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%y
+    betahativ = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%y
     
     #compute GMM standard errors with White weighting matrix
     
@@ -223,7 +223,7 @@ GMM_own = function(y,x,z,w)
     
     sigmahat2 = t(res)%*%res%*%(n-k) #check if k is correct? Because we can have more than k parameters
     
-    xxi = inv(t(x)%*%z%*%inv(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)
+    xxi = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)
     
     covarbetaiv = sigmahat2%*%xxi
     
@@ -239,10 +239,10 @@ GMM_own = function(y,x,z,w)
     
     if (r>k) {
       
-      J1 = t(t(z)%*%res)%*%inv(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
+      J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
       
       #define z2 for a subset of instruments
-      J2 = t(t(z2)%*%res)%*%inv(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
+      J2 = t(t(z2)%*%res)%*%solve(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
       
       diffJ= J1 - J2
       
