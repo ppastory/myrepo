@@ -23,7 +23,7 @@ GMM_own = function(y,x,z,w)
 #to compute betahat
  
 #weighting matrix only for overidentified
-  if (z==o) {
+  if (z==0) {
   
     betahat = inv(t(x)%*%x)%*%t(x)%*%y
     
