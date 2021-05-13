@@ -63,7 +63,7 @@ data<-na.omit(data)
 
 ##First let's first difference our data!
 
-data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-  transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
@@ -71,6 +71,8 @@ data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(
 
 data<-na.omit(data)
 
+#delete the variables I don't need
+data <- data[-c(3:9)]
 
 
 ######################
@@ -97,9 +99,6 @@ cor(res,data[,c(7:11)])
 ######################
 
 
-#Let's remove the column we don't need
-data <- data[-c(3:9)]
-
 #let's see the correlation of our endogenous variable with the lags 
 cor(data[,ncol(data)],data[,c(7:11)])
 
@@ -114,17 +113,66 @@ cor(data[,ncol(data)],data[,c(7:11)])
 
 Z_ei <- cbind(data[,c(13:16,7)])
 
-Z_oi <- as.matrix(cbind(data[,c(13:16,7:11)]))
+Z_oi <- as.matrix(cbind(data[,c(13:15,7:11)]))
 
 
 #we will do a F-test on our set of instruments (sl32)
 
 x_endog <- data[,ncol(data)]
 
+#unrestricted model
+x <- Z_oi
+y <- x_endog
+  
+n  <- length(y)
+k  <- ncol(x)
+df <- n-k
 
-OLS_F1 <- OLS_own(x_endog, Z_oi,0)
+## Run OLS
+xy     <- t(x)%*%y
+xxi    <- solve(t(x)%*%x, tol = 1e-20) #this is (X' X)^(-1)
+coefs  <- as.vector(xxi%*%xy)
 
-OLS_F1
+#we see that the coefficient of the instrument lag -1 and -2 are automatically
+#related to the instrument variable so we cannot test their relevance (they correlate
+#perfectly with the endogenous variable)
+
+yhat   <- as.vector(x%*%coefs)
+res    <- y-yhat
+SSR_u <- as.vector(t(res)%*%res)
+
+
+
+##restricted model
+x <- Z_oi[,c(1:3)]
+y <- x_endog
+
+n  <- length(y)
+k  <- ncol(x)
+df <- n-k
+
+## Run OLS
+xy     <- t(x)%*%y
+xxi    <- solve(t(x)%*%x, tol = 1e-20) #this is (X' X)^(-1)
+coefs  <- as.vector(xxi%*%xy)
+
+yhat   <- as.vector(x%*%coefs)
+res    <- y-yhat
+SSR_r <- as.vector(t(res)%*%res)
+
+
+#estimate exactly identified model using the second lag of lnCit as instrument
+y <- data[,12]
+
+x <- as.matrix(data[,c(13:16)]) 
+
+Z <- Z_ei
+
+GMM_exact = GMM_own(y, x, Z,0)
+
+#estimate overidentified model
+z_over = cbind(z_D_gmm[,1], z_D_gmm[,7], z_D_gmm[,12])
+GMM_over = GMM_own(y_D_diff_subset, x_D_diff_subset, z_D_gmm[,1],1)
 
 
 
