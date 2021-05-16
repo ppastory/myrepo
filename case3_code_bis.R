@@ -166,9 +166,11 @@ y <- data[,12]
 
 x <- as.matrix(data[,c(13:16)]) 
 
-Z <- Z_ei
+Z <- as.matrix(Z_ei)
 
 GMM_exact = GMM_own(y, x, Z,0)
+GMM_exact$estimation
+
 
 #estimate overidentified model
 z_over = cbind(z_D_gmm[,1], z_D_gmm[,7], z_D_gmm[,12])
