@@ -111,7 +111,7 @@ cor(data[,ncol(data)],data[,c(7:11)])
 #the exactly identified
 #we use as instrument the first lag since it is the one correlating the most
 
-Z_ei <- cbind(data[,c(13:16,7)])
+Z_ei <- cbind(data[,c(13:15,7)])
 
 Z_oi <- as.matrix(cbind(data[,c(13:15,7:11)]))
 
@@ -168,13 +168,23 @@ x <- as.matrix(data[,c(13:16)])
 
 Z <- as.matrix(Z_ei)
 
-GMM_exact = GMM_own(y, x, Z,0)
+#standard
+#GMM_exact = GMM_own(y, x, Z,0)
+#GMM_exact$estimation
+
+#White standard_error
+#GMM_exact = GMM_own(y, x, Z,1)
+#GMM_exact$estimation
+
+#Newey_west standard errors
+GMM_exact = GMM_own(y, x, Z,2)
 GMM_exact$estimation
 
-
 #estimate overidentified model
-z_over = cbind(z_D_gmm[,1], z_D_gmm[,7], z_D_gmm[,12])
-GMM_over = GMM_own(y_D_diff_subset, x_D_diff_subset, z_D_gmm[,1],1)
+
+Z <- Z_oi
+
+GMM_over = GMM_own(y, x, Z,1)
 
 
 
