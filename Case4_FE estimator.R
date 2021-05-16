@@ -2,25 +2,86 @@
 ##################              FE estimator             ##################
 ####################################################################
 
-FE = function (y,x,T,TFE) 
+FE = function (data,TFE) 
 ###build matrix D
 {
-  N   <-nT/T
-  D   <- matrix(0, NT, N)
-  M_D <- diag(NT)-D %*% slove(t(D) %*% D) %*% t(D) ###Residual maker matrix
-  ##with estimator follow slides p21 equation
-  b   <- slove(t(x) %*% M_D %*% x) %*% t(x) %*% M_D  %*% y
-  ##constant alpha
-  a   <- slove(t(D) %*% D) %*% t(D) %*% (y-x %*% b)
-  coefs_bw_fe<-b
-  coefs_fe<-a
-  ##FE variance-covariance matrix
-  df    <- nT-N-K
-  res_fe<- M_D %*% y - x %*% b
-  sigma_ep_2 <- (t(res_fe) %*% res_fe)/ df
-  vcm_bw <- sigma_ep_2 %*% slove(t(x) %*% M_D %*% x)
-  std_fe<-sqrt(vcm_bw)
-  tstats_fe = coefs_bw_fe/std_fe
-  pvals_fe = 2*(1-pt(abs(tstats_fe),df))
+  y <- as.matrix(data[,10])
+  
+  x <- as.matrix(data[,11:14])
+  
+  
+  idx <- sort(unique(data$state))
+  state_i <- matrix(0, nrow = nrow(data), ncol = length(idx))
+  
+  for (j in 1:length(idx)) { 
+    state_i[,j] <- as.integer(data$state == idx[j])
+  }
+  
+  idx <- sort(unique(data$year))
+  year_i <- matrix(0, nrow = nrow(data), ncol = length(idx))
+  
+  for (j in 1:length(idx)) { 
+    year_i[,j] <- as.integer(data$year == idx[j])
+  }
+  
+  #Let's write the demeaning matrix by individuals
+  #I need the identity matrix
+  NT <- nrow(data)
+  I   <- matrix(0, NT, NT)
+  diag(I) <- 1
+  
+  P_i <- state_i %*% solve(t(state_i) %*% state_i) %*% t(state_i)
+  
+  P_T <- year_i %*% solve(t(year_i) %*% year_i) %*% t(year_i)
+  
+  y_demean <- y - P_i %*% y
+  
+  x_demean <- x - P_i %*% x
+  
+  
+  y_demean_it <- y_demean - P_T %*% y_demean
+  
+  x_demain_it <- x_demean - P_T %*% x_demean
+  
+  if (TFE == 1){
+    x <- x_demain_it
+    y <- y_demean_it
+  } else{
+    x <- x_demean
+    y <- y_demean
+    
+  }
 
+  xy     <- t(x)%*%y
+  xxi    <- solve(t(x)%*%x) #this is (X' X)^(-1)
+  coefs  <- as.vector(xxi%*%xy)
+  
+  yhat   <- as.vector(x%*%coefs)
+  res    <- y-yhat
+  
+  sigma2 <- as.vector(t(res)%*%res)/df
+  
+  #case where we only want to do 
+  
+  var <- sigma2*xxi
+  stdvs <- sqrt(diag(var))
+  
+  tstats <- coefs/stdvs
+  pvals  <- 2*(1-pt(abs(tstats),df))
+  
+  ## Save output
+  names(coefs) <- colnames(x)
+  
+  coefs  <- round(coefs,3)
+  stdvs  <- round(stdvs,3)
+  tstats <- round(tstats,3)
+  pvals  <- round(pvals,3)
+  
+  out = rbind(coefs,stdvs,tstats,pvals)
+  out = t(out)
+  
+  output <- list("estimation" = out, "data" = cbind(y,x))
+  
+  return(output)
+  
 }
