@@ -23,7 +23,7 @@ GMM_own = function(y,x,z,w)
 #to compute betahat
  
 #weighting matrix only for overidentified
-  if (z==0) {
+  if (w==-1) {
   
     betahat = solve(t(x)%*%x)%*%t(x)%*%y
     
@@ -67,20 +67,22 @@ GMM_own = function(y,x,z,w)
  
     wmatrix = solve(t(z)%*%z) #when errors are iid 
     
-    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+    
+    betahativ <- as.vector(betahativ) 
     
     #compute GMM finite sample standard errors
     res = y - x%*%betahativ
     
-    sigmahat2 = t(res)%*%res%*%(n-k)
+    sigmahat2 = as.vector((t(res)%*%res))/(n-k)
     
     xxi = solve(t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%x)
     
-    covarbetaiv = sigmahat2%*%xxi
+    covarbetaiv = sigmahat2 * xxi
     
     stderror <- sqrt(diag(covarbetaiv))
     
-    tstat <- betahativ/stderror
+    tstats <- betahativ/stderror
     
     pvals <- 2*(1-pt(abs(tstats),df)) 
     
@@ -105,7 +107,9 @@ GMM_own = function(y,x,z,w)
   
   wmatrix = solve(t(z)%*%z) #to compute sigma2omega
   
-  betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
+  betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+  
+  betahativ <- as.vector(betahativ) 
   
   res = y - x%*%betahativ
   
@@ -116,7 +120,7 @@ GMM_own = function(y,x,z,w)
   res2 = matrix(0,nrows(res2), ncol(res2))
   
   res2 <- diagonal
-    
+  
   sigma2omega = res2
           
   betahativ = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%y
@@ -125,11 +129,11 @@ GMM_own = function(y,x,z,w)
   
   res = y - x%*%betahativ
   
-  sigmahat2 = t(res)%*%res%*%(n-k) #check if k is correct? Because we can have more than k parameters
+  sigmahat2 = as.vector((t(res)%*%res))/(n-k) #check if k is correct? Because we can have more than k parameters
   
   xxi = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)
   
-  covarbetaiv = sigmahat2%*%xxi
+  covarbetaiv = sigmahat2*xxi
   
   #Compute Windmeijer correction (nice to have)
   
