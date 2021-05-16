@@ -117,14 +117,16 @@ GMM_own = function(y,x,z,w)
   
   diagonal <- diag(res2)
   
-  res2 = matrix(0,nrows(res2), ncol(res2))
+  res2 = matrix(0,nrow(res2), ncol(res2))
   
-  res2 <- diagonal
+  diag(res2) <- diagonal
   
   sigma2omega = res2
           
   betahativ = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%y
-    
+  
+  betahativ <- as.vector(betahativ) 
+  
   #compute GMM standard errors with White weighting matrix
   
   res = y - x%*%betahativ
@@ -139,17 +141,18 @@ GMM_own = function(y,x,z,w)
   
   stderror <- sqrt(diag(covarbetaiv))
   
-  tstat <- betahativ/stderror
+  tstats <- betahativ/stderror
   
   pvals <- 2*(1-pt(abs(tstats),df)) 
   
-  #Compute Hansen diagnostic test
+  #Compute Hansen diagnostic test for identified models
   
   if (r>k) {
   
   J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
   
-  #define z2 for a subset of instruments
+  #define z2 for a subset of instruments Check this line
+  
   J2 = t(t(z2)%*%res)%*%solve(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
   
   diffJ= J1 - J2
@@ -188,7 +191,9 @@ GMM_own = function(y,x,z,w)
     
     wmatrix = solve(t(z)%*%z) #to compute sigma2omega
     
-    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%z%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+    
+    betahativ <- as.vector(betahativ) 
     
     res = y - x%*%betahativ
     
@@ -196,9 +201,9 @@ GMM_own = function(y,x,z,w)
     
     diagonal <- diag(res2)
     
-    res2 = matrix(0,nrows(res2), ncol(res2))
+    res2 = matrix(0,nrow(res2), ncol(res2))
     
-    res2 <- diagonal
+    diag(res2) <- diagonal
     
     #sigma2omega = res2
     
@@ -220,12 +225,13 @@ GMM_own = function(y,x,z,w)
     neweywestcovar = muxx + doublsum
     
     betahativ = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%y
+    betahativ <- as.vector(betahativ) 
     
     #compute GMM standard errors with White weighting matrix
     
     res = y - x%*%betahativ
     
-    sigmahat2 = t(res)%*%res%*%(n-k) #check if k is correct? Because we can have more than k parameters
+    sigmahat2 = as.vector((t(res)%*%res))/(n-k) #check if k is correct? Because we can have more than k parameters
     
     xxi = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)
     
@@ -235,7 +241,7 @@ GMM_own = function(y,x,z,w)
     
     stderror <- sqrt(diag(covarbetaiv))
     
-    tstat <- betahativ/stderror
+    tstats <- betahativ/stderror
     
     pvals <- 2*(1-pt(abs(tstats),df))
     
@@ -246,6 +252,7 @@ GMM_own = function(y,x,z,w)
       J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
       
       #define z2 for a subset of instruments
+      
       J2 = t(t(z2)%*%res)%*%solve(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
       
       diffJ= J1 - J2
