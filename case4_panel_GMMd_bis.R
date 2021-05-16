@@ -52,7 +52,7 @@ data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 data  <- na.omit(data) #Gere we loose an observation but we don't care it's fine
 #T = 29
 
-#We create the matrix D of dummies for each variable
+#we extract the data we need
 
 y <- as.matrix(data[,10])
 
