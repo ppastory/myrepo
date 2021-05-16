@@ -55,6 +55,10 @@ data  <- na.omit(data)
 
 FE_est = FE(data,1)
 
+y <- as.matrix(data[,10])
+
+x <- as.matrix(data[,11:14])
+
 T <-   length(unique(data$year)) #the real T
   
   
