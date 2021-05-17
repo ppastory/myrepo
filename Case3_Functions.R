@@ -251,11 +251,6 @@ GMM_own = function(y,x,z,w)
       
       J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
       
-      #define z2 for a subset of instruments
-      
-      J2 = t(t(z2)%*%res)%*%solve(t(z2)%*%sigma2omega%*%z2)%*%(t(z2)%*%res)
-      
-      diffJ= J1 - J2
       
       #compute number of suspect moment conditions
       
@@ -263,7 +258,7 @@ GMM_own = function(y,x,z,w)
       
       #test joint validity of moment conditions using J stats
       
-      pval = dchisq(diffJ,degreesoffreedomchisquared)
+      pval = dchisq(J1,degreesoffreedomchisquared)
       
     }
     
