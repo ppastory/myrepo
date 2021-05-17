@@ -137,7 +137,7 @@ for (sst in seq(31, nrow(data), T)) {
   #print(sst)
   #The second chunk for example goes from 30 to 
   #30 + 27 
-  y_i <- data[sst:(sst+28),10]
+  y_i <- data[sst:(sst+27),10]
   
   x_i <- data[(sst+2):((sst+2)+28),16:18]
   
@@ -195,6 +195,7 @@ data_reg <- na.omit(data)
 y <- as.matrix(na.omit(data_reg[,15]))
 
 W_notinv <- t(Z) %*% H %*% Z 
+
 #we have the big W optimal
 W_opt <- solve(W_notinv,tol = 1e-22)
 
@@ -208,7 +209,6 @@ res    <- y_pred-yhat
 sigma2 <- as.vector(t(res)%*%res)/2
 
 var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
-
 
 
 #std_P <- sqrt(var_g[1])
