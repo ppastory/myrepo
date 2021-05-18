@@ -126,12 +126,17 @@ OLS_own = function (y,x,w)
     names(tstats_GLS) <- colnames(x)
     
     #creating the table
-    coefs  <- round(coefs_GLS,3)
-    stdvs  <- round(stdvs_GLS,3)
-    tstats <- round(tstats_GLS,3)
-    pvals  <- round(pvals_GLS,3)
+    #coefs  <- round(coefs_GLS,3)
+    #stdvs  <- round(stdvs_GLS,3)
+    #tstats <- round(tstats_GLS,3)
+    #pvals  <- round(pvals_GLS,3)
     
-    
+    #creating the table
+    coefs  <- coefs_GLS
+    stdvs  <- stdvs_GLS
+    tstats <- tstats_GLS
+    pvals  <- pvals_GLS
+  
     out_GLS = rbind(coefs,stdvs,tstats,pvals)
     
     out_GLS = t(out_GLS)
