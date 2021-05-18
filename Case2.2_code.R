@@ -45,7 +45,7 @@ set.seed(123)
 T <- 2500
 
 #repl number of replication
-repl <- 2000 #less number of replication to work on the code
+repl <- 3000 #less number of replication to work on the code
 
 
 ############################################
@@ -123,7 +123,7 @@ ttest_matrix <- matrix(0,repl, length(beta1_test))
 
 for (j in 1:length(beta1_test)) {
   for (i in 1:repl) {
-    
+    print(i)
     #stochastic X: X = rnorm(T,0,sigma2)
     #let's get some errors, we define sigma 2 =1 earlier
     e <- rnorm(T,0,sd = sqrt(diagonal))
@@ -412,6 +412,7 @@ ttest_matrix <- matrix(0,repl, length(beta1_test))
 for (j in 1:length(beta1_test)) {
   
   for (i in 1:repl) {
+    print(i)
     #stochastic X: X = rnorm(T,0,sigma2)
     sigma2 <- 1
     alpha <- 4
@@ -422,18 +423,29 @@ for (j in 1:length(beta1_test)) {
     #e <- rnorm(T,0,diagonal)
     #now I can have my y !
     Y <- X%*%beta + e
+    #
+    #sigma2 <- 1
+    #alpha <- 4
+    #
+    #diagonal <- xsim^alpha
+    ##sigma_omega is the asymptotic variance of the OLS estimator
+    #P <- matrix(0,T,T) 
+    ##I put back the diagonal element in the diagonal  
+    #
+    #diag(P) <- 1/sqrt(diagonal)
+    #
+    #sigma_omega <- t(P) %*% P
+    
     
     sigma2 <- 1
     alpha <- 4
     
     diagonal <- xsim^alpha
     #sigma_omega is the asymptotic variance of the OLS estimator
-    P <- matrix(0,T,T) 
+    sigma_omega <- matrix(0,T,T) 
     #I put back the diagonal element in the diagnonal  
+    diag(sigma_omega) <- 1/diagonal
     
-    diag(P) <- sqrt(diagonal)
-    
-    sigma_omega <- t(P) %*% P
     
     #omega is known
     GLS_static = GLS_own(Y,X,sigma_omega)
@@ -474,6 +486,9 @@ diag(sigma_omega) <- 1/diagonal
 cov_GLS   <- sigma2 * solve(t(X) %*% sigma_omega %*%X)
 stdvs_0_ana <- sqrt(cov_GLS[1,1])
 stdvs_1_ana <- sqrt(cov_GLS[2,2])
+
+coefs_GLS <- solve((t(X) %*% sigma_omega %*% X)) %*% t(X) %*% sigma_omega %*% Y
+coefs_GLS <- c(coefs_GLS)
 
 ##estimated standard errors
 stdvs_0_est <- mean(stdvs_0)
@@ -525,7 +540,7 @@ size_beta1 <- mean(rej_matrix[,1])
 power_beta1 <- colMeans(rej_matrix[,2:5])
 #power_beta1
 
-#Store the result for OLS with White
+#Store the result for GLS
 #table with size and power
 sp_mat[3,] <- cbind(size_beta1,t(power_beta1))
 
