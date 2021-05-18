@@ -243,3 +243,116 @@ pvals  <- round(pvals_GGMM_sys,3)
 
 out_pvals_BGMM_sys = cbind(coefs,stdvs,tstats,pvals)
 
+
+###################################################
+############Restrict the lag length###############
+##################################################
+
+
+#let's say that I want max 5 lags
+max_lag <- 5
+
+el <- max_lag-1
+#Let's loop over the states and create our big matrix
+
+n_inst <- sum(seq(1,(max_lag-1))) + ((T-2)-length(seq(1,(max_lag-1))))*(max_lag-1)
+
+
+#The chunks have size 27 !!!
+#because yi27 is the last instrument of delta_ei29
+y_1 <- y[1:(T-2)]
+
+Z_1 <- matrix(0,T-2,n_inst)
+column <-1 
+
+for (i in (1:(T-2))) {
+  
+  
+  #Chunk is the bunch of yi that we are going to put in the Z_i matrix
+  chunk <- as.numeric(y_1[1:i])
+  #print(chunk)
+  exog_var <- data[i+2,16:18]
+  
+
+  #print(chunk)
+  
+  if (length(chunk) < (max_lag-1)){
+    for (j in 1:length(chunk)){
+      Z_1[i,column+j-1] <- chunk[j]
+    }
+    # Z_1[i,column] <- chunk
+    column <- column + i
+    
+  } else {
+    
+    print(column)
+    el <- max_lag-1
+    
+    for (j in 1:(max_lag-1)){
+      Z_1[i,column+j-1] <- tail(chunk,el)[j]
+    }
+    
+    column <- column + (max_lag-1)
+  }
+}
+
+
+Z <- Z_1
+
+#We start at the column 30 and go by chunks of 29
+#but we will only loop over the Y chunks until 27 !
+#that is because yi27 will instrument delta_ei29
+for (sst in seq(30, length(y), T)) {
+  
+  print(sst)
+  #The second chunk for example goes from 30 to 
+  #30 + 27 
+  y_i <- y[sst:(sst+27)]
+  
+  #The matrix of instruments has size 27 x 378 ! 
+  #each time period we use more lags
+  Z_i <- matrix(0,T-2,n_inst)
+  column <-1 
+  
+  for (i in (1:(T-2))) {
+    
+    #Chunk is the bunch of yi that we are going to put in the Z_i matrix
+    chunk <- as.numeric(y_1[1:i])
+    #print(chunk)
+    
+    if (length(chunk) < (max_lag-1)){
+      for (j in 1:length(chunk)){
+        Z_i[i,column+j-1] <- chunk[j]
+      }
+      # Z_1[i,column] <- chunk
+      column <- column + i
+      
+    } else {
+      
+      #print(column)
+      el <- max_lag-1
+      
+      for (j in 1:(max_lag-1)){
+        Z_i[i,column+j-1] <- tail(chunk,el)[j]
+      }
+      
+      column <- column + (max_lag-1)
+    }
+  }
+  
+  
+  Z <- rbind(Z,Z_i)
+  
+}
+
+#changing number of instrumeeents!
+n_inst_var <- N*(T-2)
+
+#Imagine our big H is very big -> we try to create 
+diagonal <- 2
+offdiagonal<- -1
+H <- matrix(0,n_inst_var,n_inst_var)
+diag(H) <- diagonal
+diag(H[-1,])<-offdiagonal
+diag(H[,-1])<-offdiagonal
+H
