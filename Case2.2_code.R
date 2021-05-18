@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 2500
+T <- 50
 
 #repl number of replication
-repl <- 3000 #less number of replication to work on the code
+repl <- 10000 #less number of replication to work on the code
 
 
 ############################################
@@ -660,7 +660,7 @@ res2<- res%*%t(res)
 #the non-diagnonal elemets of res2 need to have 0
 #I take away the diagonals
 #for teacher no need to take log(X)
-x <- as.matrix(cbind(Cnst=01,log(xsim^2)))
+x <- as.matrix(cbind(Cnst=1,log(xsim^2)))
 
 y <- log(diag(res2))
 
