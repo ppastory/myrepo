@@ -42,7 +42,7 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have sample of reasonable size
-T <- 50
+T <- 3000
 
 #repl number of replication
 repl <- 10000 #less number of replication to work on the code
