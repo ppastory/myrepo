@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have a ok sample
-T <- 500
+T <- 40
 
 #repl number of replication
-repl <- 1500 #less number of replication to work on the code
+MCrepl <- 100 #less number of replication to work on the code
 
 
 ############################################
@@ -63,10 +63,10 @@ colnames(sp_mat) <- c("size","power B=0.95","power B=0.9","power B=0.75","power 
 
 
 #initialising the vector
-X_bar <- rep(0,repl)
-X_var  <- rep(0,repl)
+X_bar <- rep(0,MCrepl)
+X_var  <- rep(0,MCrepl)
 
-y_bar <- rep(0,repl)
+y_bar <- rep(0,MCrepl)
 
 #initialising the parameters value
 b_0 <- 10
@@ -95,7 +95,7 @@ res <- OLS_out$residuals
 
   
 #bootstrap replication
-brepl <- 100
+brepl <- 20
 
 #I am initialising the vectors in which beta and other stuff will arrive -Pairwise
 beta_0_0LSbp <- rep(0,brepl)
@@ -111,9 +111,11 @@ beta1_test <- as.matrix(t(c(1,0.95,0.90,0.75,0.5)))
 #ttest matrix with column are different beta1 and 
 #the rows are one ttest per simulation
 
-ttest_matrixbp <- matrix(0,repl, length(beta1_test))
-ttest_matrixbw <- matrix(0,repl, length(beta1_test))
-ttest_matrix  <- matrix(0,repl, length(beta1_test))
+ttest_matrixbp <- matrix(0,MCrepl, length(beta1_test))
+ttest_matrixbw <- matrix(0,MCrepl, length(beta1_test))
+ttest_matrix  <- matrix(0,MCrepl, length(beta1_test))
+ttest_matrix_test  <- matrix(0,MCrepl, length(beta1_test))
+
 
 data <- cbind(Y,X)
 
@@ -124,7 +126,7 @@ for (j in 1:length(beta1_test)) {
 
     #1 pair bootstrap 
     #I am taking our a boostrap pair of Y and X
-    boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
+    boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 1)),T,replace=T)),]
     #by taking a pair of Y and x -> then x is not deterministic anymore
     
     #My y in the pair is the last column
@@ -209,29 +211,29 @@ table_std_num
 ####OLS Bootstrap only using many MC draw  ######
 ################################################
 
-beta_0_OLS <- rep(0,repl)
-beta_1_OLS <- rep(0,repl)
+beta_0_OLS <- rep(0,MCrepl)
+beta_1_OLS <- rep(0,MCrepl)
 
-stdvs_0_OLS <- rep(0,repl)
-stdvs_1_OLS <- rep(0,repl)
+stdvs_0_OLS <- rep(0,MCrepl)
+stdvs_1_OLS <- rep(0,MCrepl)
 
 #For every MC simulation, I get an estimated beta and its standard errors !
 
-beta_0_barp<- rep(0,repl) 
-beta_1_barp<- rep(0,repl)
+beta_0_barp<- rep(0,brepl) 
+beta_1_barp<- rep(0,brepl)
 
-stdvs_0bp<- rep(0,repl)
-stdvs_1bp<- rep(0,repl)
+stdvs_0bp<- rep(0,MCrepl)
+stdvs_1bp<- rep(0,MCrepl)
 
-beta_0_barw<- rep(0,repl)
-beta_1_barw<- rep(0,repl)
+beta_0_barw<- rep(0,brepl)
+beta_1_barw<- rep(0,brepl)
 
-stdvs_0bw<- rep(0,repl)
-stdvs_1bw<- rep(0,repl)
+stdvs_0bw<- rep(0,MCrepl)
+stdvs_1bw<- rep(0,MCrepl)
 
 for (j in 1:length(beta1_test)) {
   #for each MC simulation -> I draw an X, a Y an error
-  for (i in 1:repl) {
+  for (i in 1:MCrepl) {
 
     #let's get some errors: they are heteroskedastic
     diagonal <- xsim^alpha
@@ -252,7 +254,7 @@ for (j in 1:length(beta1_test)) {
         
         #1 pair bootstrap 
         #I am taking our a boostrap pair of Y and X
-        boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),100,replace=T)),]
+        boot_pair = data[unlist(sample(as.data.frame(matrix(1:nrow(data),nrow = 2)),T,replace=T)),]
         
         #My y in the pair is the last column
         Ybp<-as.matrix(boot_pair[,1])
@@ -312,11 +314,9 @@ for (j in 1:length(beta1_test)) {
     
     #Do the pairwise standard errors
     #let's get the numerical standard errors -> true ones
-    var_0_nump <- var(beta_0_0LSbp) 
-    var_1_nump <- var(beta_1_OLSbp)
+    stdvs_0_nump <- sqrt(var(beta_0_0LSbp))
+    stdvs_1_nump <- sqrt(var(beta_1_OLSbp))
     
-    stdvs_0_nump <- sqrt(var_0_nump)
-    stdvs_1_nump <- sqrt(var_1_nump)
     
     #I get a bootstrap beta  
     beta_0_barp[i] <- mean(beta_0_0LSbp)
@@ -335,11 +335,9 @@ for (j in 1:length(beta1_test)) {
     ###Do the wild standard errors
     #let's get the numerical standard errors 
     
-    var_0_numw <- var(beta_0_0LSbw)
-    var_1_numw <- var(beta_1_OLSbw)
+    stdvs_0_numw <- sqrt(var(beta_0_0LSbw))
+    stdvs_1_numw <- sqrt(var(beta_1_OLSbw))
     
-    stdvs_0_numw <- sqrt(var_0_numw)
-    stdvs_1_numw <- sqrt(var_1_numw)
     
     #For every Monte-carlo I get a Wild Bootstrap std errors
     stdvs_0bw[i] <- stdvs_0_numw
@@ -373,8 +371,12 @@ for (j in 1:length(beta1_test)) {
     }   
 }
 
+
+
+
 colnames(ttest_matrixbp) <- c(1,0.95,0.90,0.75,0.5)
 colnames(ttest_matrixbw) <- c(1,0.95,0.90,0.75,0.5)
+
 
 #We want to check that the estimated standard error is unbiased
 #A. Estimated standard error#
