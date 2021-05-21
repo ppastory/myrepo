@@ -42,10 +42,10 @@ source("Case1_Functions.R")
 set.seed(123)
 
 #we assume we have a ok sample
-T <- 40
+T <- 500
 
 #repl number of replication
-MCrepl <- 100 #less number of replication to work on the code
+MCrepl <- 5000 #less number of replication to work on the code
 
 
 ############################################
@@ -95,7 +95,7 @@ res <- OLS_out$residuals
 
   
 #bootstrap replication
-brepl <- 20
+brepl <- 250
 
 #I am initialising the vectors in which beta and other stuff will arrive -Pairwise
 beta_0_0LSbp <- rep(0,brepl)
@@ -451,28 +451,27 @@ colnames(table_beta0) <- c("population","estimated std MC","numerical MC std","e
 
 #let's do a matrix of critical values
 
-CV_beta1_LBbp <- quantile(ttest_matrixbp[,1], c(.025))
-CV_beta1_UBbp <- quantile(ttest_matrixbp[,1], c(.975))
+CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
 
-#
-
-rej_function <- function(ttest,LB,UB){
-  if (ttest <= LB || ttest >= UB){
+rej_function <- function(ttest,cv){
+  if (abs(ttest) > cv){
     return(1)
   }else{
     return(0)
   }
 }
 
+
 #initialise matrix of rejection 
-rej_matrixbp <- matrix(0,nrow(ttest_matrixbp),ncol(ttest_matrixbp))
+rej_matrix <- matrix(0,nrow(ttest_matrixbp),ncol(ttest_matrixbp))
 #Lets store the 1 and 0 of rejection in a matrix
 for (j in 1:5){
-  rej_matrixbp[,j]<-sapply(ttest_matrixbp[,j],rej_function, LB= CV_beta1_LBbp,UB= CV_beta1_UBbp)
+  rej_matrix[,j]<-sapply(ttest_matrixbp[,j],rej_function, cv= CV_beta1)
 }
-#this is the size, the mean of column 1 for which beta =1
-size_beta1bp <- mean(rej_matrixbp[,1])
-#size_beta1
+#this is the size, the mean of column 1 for which beta = 1
+size_beta1bp <- mean(rej_matrix[,1])
+#there is a size bias if the critical values are wrong !
+
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
 power_beta1bp <- colMeans(rej_matrixbp[,2:5])
@@ -490,28 +489,26 @@ sp_mat[1,] <- cbind(size_beta1bp,t(power_beta1bp))
 
 #let's do a matrix of critical values
 
-CV_beta1_LBbw <- quantile(ttest_matrixbw[,1], c(.025))
-CV_beta1_UBbw <- quantile(ttest_matrixbw[,1], c(.975))
+CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
 
-#
-
-rej_function <- function(ttest,LB,UB){
-  if (ttest <= LB || ttest >= UB){
+rej_function <- function(ttest,cv){
+  if (abs(ttest) > cv){
     return(1)
   }else{
     return(0)
   }
 }
 
+
 #initialise matrix of rejection 
-rej_matrixbw <- matrix(0,nrow(ttest_matrixbw),ncol(ttest_matrixbw))
+rej_matrix <- matrix(0,nrow(ttest_matrixbw),ncol(ttest_matrixbw))
 #Lets store the 1 and 0 of rejection in a matrix
 for (j in 1:5){
-  rej_matrixbw[,j]<-sapply(ttest_matrixbw[,j],rej_function, LB= CV_beta1_LBbw,UB= CV_beta1_UBbw)
+  rej_matrix[,j]<-sapply(ttest_matrixbw[,j],rej_function, cv= CV_beta1)
 }
-#this is the size, the mean of column 1 for which beta =1
-size_beta1bw <- mean(rej_matrixbw[,1])
-#size_beta1
+#this is the size, the mean of column 1 for which beta = 1
+size_beta1bw <- mean(rej_matrix[,1])
+#there is a size bias if the critical values are wrong !
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
 power_beta1bw <- colMeans(rej_matrixbw[,2:5])
@@ -527,83 +524,6 @@ sp_mat[2,] <- cbind(size_beta1bw,t(power_beta1bw))
 
 
 
-#C Compute size and power
-###
-
-ttest_matrix
-
-#loop over the t-tests and give me the Critical values for each one
-colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
-
-#let's do a matrix of critical values, alpha is 5%
-#the t statistics follows a student t with 2 degrees of freedom 
-
-CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
-
-rej_function <- function(ttest,cv){
-  if (abs(ttest) > cv){
-    return(1)
-  }else{
-    return(0)
-  }
-}
-
-
-#initialise matrix of rejection 
-rej_matrix <- matrix(0,nrow(ttest_matrix),ncol(ttest_matrix))
-#Lets store the 1 and 0 of rejection in a matrix
-for (j in 1:5){
-  rej_matrix[,j]<-sapply(ttest_matrix[,j],rej_function, cv= CV_beta1)
-}
-#this is the size, the mean of column 1 for which beta = 1
-size_beta1 <- mean(rej_matrix[,1])
-#there is a size bias if the critical values are wrong !
-
-#the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- colMeans(rej_matrix[,2:5])
-#power_beta1
-
-#Store the result for OLS
-#table with size and power
-
-#C Compute size and power
-###
-
-ttest_matrix1 <- ttest_matrixbw
-
-#loop over the t-tests and give me the Critical values for each one
-colnames(ttest_matrix1) <- c(1,0.95,0.90,0.75,0.5)
-
-#let's do a matrix of critical values, alpha is 5%
-#the t statistics follows a student t with 2 degrees of freedom 
-
-CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
-
-rej_function <- function(ttest,cv){
-  if (abs(ttest) > cv){
-    return(1)
-  }else{
-    return(0)
-  }
-}
-
-
-#initialise matrix of rejection 
-rej_matrix <- matrix(0,nrow(ttest_matrix1),ncol(ttest_matrix1))
-#Lets store the 1 and 0 of rejection in a matrix
-for (j in 1:5){
-  rej_matrix[,j]<-sapply(ttest_matrix1[,j],rej_function, cv= CV_beta1)
-}
-#this is the size, the mean of column 1 for which beta = 1
-size_beta1 <- mean(rej_matrix[,1])
-#there is a size bias if the critical values are wrong !
-
-#the power is P(non reject if Beta != 1) -> 1 - P(reject)
-power_beta1 <- colMeans(rej_matrix[,2:5])
-#power_beta1
-
-#Store the result for OLS
-#table with size and power
 
 
 
