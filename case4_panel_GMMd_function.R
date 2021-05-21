@@ -1,10 +1,14 @@
 dGMM = function (data,full_set,stack,max_lag){
+  #full set = 1 -> you 
+  
+  
   
   if (full_set == 1){
   #Extract T and N
   
     N <-   length(unique(data$state))
-
+    T <-   length(unique(data$year)) #the real T
+    
 
     #Let's loop over the states and create our big matrix
     
@@ -27,11 +31,11 @@ dGMM = function (data,full_set,stack,max_lag){
       
       #Chunk is the bunch of yi that we are going to put in the Z_i matrix
       chunk <- as.numeric(y_1[1:i])
-      #print(chunk)
+
       exog_var <- data[i+2,16:18]
       
       endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
-      print(endog_exog)
+      
       
       for (j in (1:length(endog_exog))) {
         Z_1[i,(column+j-2)] <- endog_exog[j]
@@ -56,9 +60,9 @@ dGMM = function (data,full_set,stack,max_lag){
     #that is because yi27 will instrument delta_ei29
     for (sst in seq(31, nrow(data), T)) {
       
-      #print(sst)
-      #The second chunk for example goes from 30 to 
-      #30 + 27 
+      
+      #The second chunk for example goes from 31 to 
+      #31 +28 
       y_i <- data[sst:(sst+27),10]
       
       x_i <- data[(sst+2):((sst+2)+28),16:18]
@@ -76,7 +80,7 @@ dGMM = function (data,full_set,stack,max_lag){
         
         #Chunk is the bunch of yi that we are going to put in the Z_i matrix
         chunk <- as.numeric(y_1[1:i])
-        #print(chunk)
+
         exog_var <- x_i[i,]
         
         
@@ -196,7 +200,9 @@ dGMM = function (data,full_set,stack,max_lag){
 
     } else {
     
-
+    N <-   length(unique(data$state))
+    T <-   length(unique(data$year)) #the real T
+      
     
     #el is the number of maximum instruments per period
     el <- max_lag-1
@@ -228,7 +234,8 @@ dGMM = function (data,full_set,stack,max_lag){
         endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
         
         for (j in 1:length(endog_exog)){
-          print(endog_exog[j])
+          
+          
           Z_1[i,(column+j-2)] <- endog_exog[j]
           
         }
@@ -344,7 +351,7 @@ dGMM = function (data,full_set,stack,max_lag){
     
     
     #we have the big W optimal
-    W_opt <- solve(W_notinv,tol=1e-21)
+    W_opt <- solve(W_notinv,tol=1e-23)
     
     
     gamma <- solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x) %*%  t(x) %*% Z %*% W_opt %*% t(Z) %*% y
