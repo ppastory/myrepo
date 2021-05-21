@@ -35,7 +35,7 @@ library(readxl)
 
 ## Load your own functions
 source("Case4_FE estimator.R")
-source("Case4_GMMd estimator.R")
+source("Case4_panel_GMMd_function.R")
 
 ####################################################################
 #Case 4.2. System GMM (first style)                         ########
@@ -49,8 +49,6 @@ lg <- function(x)c(NA, x[1:(length(x)-1)])
 
 data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
-#data  <- na.omit(data) #Gere we loose an observation but we don't care it's fine
-#T = 29
 
 #we extract the data we need
 
@@ -58,7 +56,6 @@ y <- as.matrix(data[,10])
 
 x <- as.matrix(data[,11:14])
 
-T <-   length(unique(data$year)) #the real T
 
 
 ##First let's first difference our data!
@@ -69,11 +66,28 @@ data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(NA, diff(x))))
 
-#data<-na.omit(data)
+##Full instrument matrix
+output <- dGMM(data,1,0,0)
+output
+
+##Stacked matrix
+output <- dGMM(data,1,1,0)
+output
+
+##Max lag matrix
+#put min max lag 2 because the minimum lag is 2
+output <- dGMM(data,0,0,2)
+output
+
+#lag 1 has a problem 
+
+#Opening the function
+
 
 #Extract T and N
 
 N <-   length(unique(data$state))
+T <-   length(unique(data$year)) #the real T
 
 
 #Let's loop over the states and create our big matrix
