@@ -67,7 +67,7 @@ GMM_own = function(y,x,z,w)
  
     wmatrix = solve(t(z)%*%z) #when errors are iid 
     
-    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%wmatrix%*%t(z)%*%y
     
     betahativ <- as.vector(betahativ) 
     
@@ -76,7 +76,7 @@ GMM_own = function(y,x,z,w)
     
     sigmahat2 = as.vector((t(res)%*%res))/(n-k)
     
-    xxi = solve(t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%x)
+    xxi = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)
     
     covarbetaiv = sigmahat2 * xxi
     
@@ -103,11 +103,11 @@ GMM_own = function(y,x,z,w)
     }  
   else if (w==1) {
     
-  #for one step GMM is always for iid errors, when not errors are not iid then choose for two step. 
+  #One step GMM is always for iid errors, when errors are not iid then choose for two step. 
   
   wmatrix = solve(t(z)%*%z) #to compute sigma2omega
   
-  betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+  betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%wmatrix%*%t(z)%*%y
   
   betahativ <- as.vector(betahativ) 
   
@@ -121,45 +121,28 @@ GMM_own = function(y,x,z,w)
   
   diag(res2) <- diagonal
   
-  sigma2omega = res2
+  #Define sigma2omega as component of Wmatrixhat
+  sigma2omega = res2 
           
   betahativ = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%y
   
   betahativ <- as.vector(betahativ) 
   
-  #compute GMM standard errors with White weighting matrix
+  #compute GMM standard errors with 'White' weighting matrix
   
   res = y - x%*%betahativ
   
-  sigmahat2 = as.vector((t(res)%*%res))/(n-k) #check if k is correct? Because we can have more than k parameters
+  sigmahat2 = as.vector((t(res)%*%res))/(n-k)
   
   xxi = solve(t(x)%*%z%*%solve(t(z)%*%sigma2omega%*%z)%*%t(z)%*%x)
   
   covarbetaiv = sigmahat2*xxi
   
-  #Compute Windmeijer correction (nice to have)
-  
   stderror <- sqrt(diag(covarbetaiv))
   
   tstats <- betahativ/stderror
   
-  pvals <- 2*(1-pt(abs(tstats),df)) 
-  
-  #Compute Hansen diagnostic test for identified models
-  
-  if (r>k) {
-  
-  J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
-  
-  #compute number of suspect moment conditions
-  
-  degreesoffreedomchisquared = r-k
-  
-  #test joint validity of moment conditions using J stats
-  
-  pval = dchisq(J1  ,degreesoffreedomchisquared)
-  
-  }
+  pvals <- 2*(1-pt(abs(tstats),df))
   
   ## Save output
   names(betahativ) <- colnames(x)
@@ -179,82 +162,65 @@ GMM_own = function(y,x,z,w)
   else if (w==2) {
   
     
-    #for one step GMM is always for iid errors, when not errors are not iid then choose for two step. 
+    #for one step GMM is always for iid errors, when errors are not iid then choose for two step. 
     
     #compute Newey-West Weighting matrix i.e. HAC standard errors
     
-    wmatrix = solve(t(z)%*%z) #to compute sigma2omega
+    wmatrix = solve(t(z)%*%z) #To obtain initial estimate of sigma2
     
-    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%z)%*%t(z)%*%y
+    betahativ = solve(t(x)%*%z%*%wmatrix%*%t(z)%*%x)%*%t(x)%*%z%*%wmatrix%*%t(z)%*%y
     
     betahativ <- as.vector(betahativ) 
     
     res = y - x%*%betahativ
     
-    res2 = res%*%t(res)
+    res2 = res*res
     
-    diagonal <- diag(res2)
+    n=length(z[,1])
     
-    res2 = matrix(0,nrow(res2), ncol(res2))
-    
-    diag(res2) <- diagonal
-    
-    #sigma2omega = res2
-    
-    #Define Newey-West lag
+    #Set up the Newey-West estimator. Define Newey-West lag
     L = n^(1/4)
     
-    #Define wl for Newey-West
+    muxx = matrix(0,ncol(z),ncol(z))
+    
+    doublesum = matrix(0,ncol(z),ncol(z)) 
+    
+    #Define wl parameter for Newey-West
     for (i in 1:n){
-      muxx = res2[i,i]%*%z[i,]%*%t(z[,i])
+      muxx_temporary = res2[i]*(z[i,]%*%t(z[i,]))
+      muxx = muxx + muxx_temporary
     }
     
     for (l in 1:L){
       for (j in (l+1):n){
         wl = 1 - (l/(L+1))
-        doublesum = wl%*%res[j]%*%res[l]%*%(z[t]%*%t(z[,j-l]) + z[j-l]%*%t(z[,j]))
+        doublesum_temporary = wl*res[j]*res[j-l]*((z[j,]%*%t(z[j-l,]) + z[j-l,]%*%t(z[j,])))
+        doublesum = doublesum + doublesum_temporary
       }
     }
     
-    neweywestcovar = muxx + doublsum
+    #Compute Newey-West estimator
+    neweywestcovar = muxx + doublesum
     
-    betahativ = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%y
-    betahativ <- as.vector(betahativ) 
+    #Compute the second step GMM beta slide 67
+    betahativ = solve(t(x)%*%z%*%solve(neweywestcovar)%*%t(z)%*%x)%*%t(x)%*%z%*%solve(neweywestcovar)%*%t(z)%*%y
+    betahativ <- as.vector(betahativ)
     
-    #compute GMM standard errors with White weighting matrix
+    #compute GMM standard errors with Newey-West weighting matrix
     
     res = y - x%*%betahativ
     
-    sigmahat2 = as.vector((t(res)%*%res))/(n-k) #check if k is correct? Because we can have more than k parameters
+    sigmahat2 = as.vector((t(res)%*%res))/(n-k)
     
-    xxi = solve(t(x)%*%z%*%solve(t(z)%*%neweywestcovar%*%z)%*%t(z)%*%x)
+    xxi = solve(t(x)%*%z%*%solve(neweywestcovar)%*%t(z)%*%x)
     
-    covarbetaiv = sigmahat2%*%xxi
-    
-    #Compute Windmeijer correction (nice to have)
+    covarbetaiv = sigmahat2*xxi
     
     stderror <- sqrt(diag(covarbetaiv))
     
     tstats <- betahativ/stderror
     
     pvals <- 2*(1-pt(abs(tstats),df))
-    
-    #Compute Hansen diagnostic test
-    
-    if (r>k) {
-      
-      J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
-      
-      
-      #compute number of suspect moment conditions
-      
-      degreesoffreedomchisquared = r-k
-      
-      #test joint validity of moment conditions using J stats
-      
-      pval = dchisq(J1,degreesoffreedomchisquared)
-      
-    }
     
     ## Save output
     names(betahativ) <- colnames(x)
@@ -269,9 +235,23 @@ GMM_own = function(y,x,z,w)
     
     output <- list("estimation" = out, "residuals" = res, "param" = k)
     
-    return(output) 
+    #Compute Hansen diagnostic test
+    
+    #if (r>k) {
+      
+      #J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
+      
+      #compute number of suspect moment conditions
+      
+      #degreesoffreedomchisquared = r-k
+      
+      #test joint validity of moment conditions using J stats
+      
+      #pval = dchisq(J1,degreesoffreedomchisquared)
+      
+    }
     
     
   }
     
-}
+
