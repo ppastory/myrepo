@@ -133,7 +133,7 @@ dGMM = function (data,full_set,stack,max_lag){
     
     n  <- length(y)
     k  <- ncol(x)
-    df <- n-k
+    df <- N*(T-1)-k
     
     sigma2 <- as.vector(t(res)%*%res)/df
     
@@ -141,7 +141,6 @@ dGMM = function (data,full_set,stack,max_lag){
     
     var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
     
-  
     
     stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
     stdvs_BGMM_sys
@@ -298,7 +297,7 @@ dGMM = function (data,full_set,stack,max_lag){
       
       n  <- length(y)
       k  <- ncol(x)
-      df <- n-k
+      df <- N*(T-1)-k
       
       sigma2 <- as.vector(t(res)%*%res)/df
       
@@ -504,7 +503,8 @@ dGMM = function (data,full_set,stack,max_lag){
     
     n  <- length(y)
     k  <- ncol(x)
-    df <- n-k
+    df <- N*(T-1)-k
+    
     
     sigma2 <- as.vector(t(res)%*%res)/df
     
@@ -519,6 +519,9 @@ dGMM = function (data,full_set,stack,max_lag){
     tstats_BGMM_sys <- gamma/stdvs_BGMM_sys
     tstats_BGMM_sys <- c(tstats_BGMM_sys)
     
+    n  <- length(y)
+    k  <- ncol(x)
+    df <- n-k
     
     pvals_GGMM_sys   <- 2*(1-pt(abs(tstats_BGMM_sys),df))
     
