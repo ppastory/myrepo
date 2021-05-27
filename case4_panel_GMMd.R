@@ -236,12 +236,21 @@ sigma2 <- sigma2/2
 
 var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
 
+#Sargan test to test the correctness of the moment condition
 
-#std_P <- sqrt(var_g[1])
-#std_Pn <- sqrt(var_g[2])
-#std_Y <- sqrt(var_g[3])
-#std_Ct_1 <- sqrt(var_g[4])
+z <- Z
 
+p <- ncol(z)
+
+k <- ncol(x)
+
+Q = t(t(z)%*%res)%*% W_opt %*%(t(z)%*%res)
+
+Q <- N*Q
+
+dfchisquared = p-k
+
+qchisq(p=.05, df=dfchisquared, lower.tail=FALSE)
 
 stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
 stdvs_BGMM_sys
@@ -475,10 +484,11 @@ N <-   length(unique(data$state))
 
 #Let's loop over the states and create our big matrix
 
+
 yit <- seq(1,T-2)
 n_inst <- sum(yit)
 
-#The chunks have size 28 !!!
+#The chunks have size 27 !!!
 #because yi27 is the last instrument of delta_ei29
 y_1 <- data[1:(T-2),10]
 
@@ -487,38 +497,26 @@ y_1 <- data[1:(T-2),10]
 #The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 27 = ninst
 #but now for each chunk 1 + 2 + ... + 27, we had the 3 explanatory variables as instrument
 
-Z_1 <- matrix(0,T-2,n_inst+((T-2)*3))
-column <-2 
+Z_1 <- matrix(0,T-2,n_inst)
+column <-1 
 
 for (i in (1:(T-2))) {
   
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
-  #reverse chunk
+  
   chunk <- rev(chunk)
-  #print(chunk)
-  exog_var <- data[i+2,16:18]
-
   
-  endog_exog <- append(chunk,as.numeric(exog_var))
-  print(endog_exog)
+  column <- column + i -1
   
-  for (j in (1:length(endog_exog))) {
-    Z_1[i,(column+j-2)] <- endog_exog[j]
+  for (j in (1:length(chunk))) {
+    Z_1[i,column+j-1] <- chunk[j]
   }
-  column <- column + i +3
+  
 }
 
-
-x_1 <- exog_var
-
-x_i <- x_1
-
-
-Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
-
 Z <- Z_1
-
+Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
 
 #We start at the column 30 and go by chunks of 29
 #but we will only loop over the Y chunks until 27 !
@@ -530,39 +528,29 @@ for (sst in seq(31, nrow(data), T)) {
   #30 + 27 
   y_i <- data[sst:(sst+27),10]
   
-  x_i <- data[(sst+2):((sst+2)+28),16:18]
   
   #The matrix of instruments has size 27 x 378 ! 
   #each time period we use more lags
-  Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
-  
-  column <-2 
-  #Next time I will start in row 57 which is row 59 -2 
-  #and so one the keeps increase by 1 for each loop, this -2 takes the name iter
-  
+  Z_i <- matrix(0,T-2,n_inst)
+  column <-1 
   
   for (i in (1:(T-2))) {
-    
-    #Chunk is the bunch of yi that we are going to put in the Z_i matrix
-    chunk <- as.numeric(y_1[1:i])
+    #print(i)
+    chunk <- as.numeric(y_i[1:i])
     chunk <- rev(chunk)
+    column <- column + i -1
     
-    #print(chunk)
-    exog_var <- x_i[i,]
-    
-    
-    endog_exog <- append(chunk,as.numeric(exog_var))
-    
-    for (j in (1:length(endog_exog))) {
-      Z_i[i,(column+j-2)] <- endog_exog[j]
+    for (j in (1:length(chunk))) {
+      Z_i[i,column+j-1] <- chunk[j]
     }
-    column <- column + i +3
+    
   }
   
   
   Z <- rbind(Z,Z_i)
   
 }
+
 
 #time to stack the matrix !
 
@@ -576,6 +564,7 @@ Z <- Z[,colSums(is.na(Z))<nrow(Z)]
 
 
 Z[is.na(Z)] <- 0
+
 
 n_inst_var <- N*(T-2)
 
@@ -593,10 +582,15 @@ data_reg <- na.omit(data)
 
 x1 <- as.matrix(na.omit(data_reg[,16:18]))
 x2 <- as.matrix(na.omit(data_reg[,19]))
-x<- cbind(x2,x1) #V1 like vendogemous
+x<- cbind(x1,x2) #V1 like vendogemous
 
 data_reg <- na.omit(data)
 y <- as.matrix(na.omit(data_reg[,15]))
+
+big_Z <- as.matrix(cbind(x1,Z))
+
+Z <- big_Z
+
 
 W_notinv <- t(Z) %*% H %*% Z 
 
@@ -610,13 +604,16 @@ y_pred <- y
 yhat   <- as.vector(x%*%gamma)
 res    <- y_pred-yhat
 
+n  <- length(y)
+k  <- ncol(x)
+df <- N*(T-1)-k
+
 sigma2 <- as.vector(t(res)%*%res)/df
 
 sigma2 <- sigma2/2
 
 
 var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
-
 
 
 
@@ -642,6 +639,24 @@ coefs  <- round(gamma,3)
 stdvs  <- round(stdvs_BGMM_sys,3)
 tstats <- round(tstats_BGMM_sys,3)
 pvals  <- round(pvals_GGMM_sys,3)
+
+#Sargan test to test the correctness of the moment condition
+
+z <- Z
+
+p <- ncol(z)
+
+k <- ncol(x)
+
+sig <- sigma2 * t(z) %*% z
+
+Q = t(t(z)%*%res)%*% W_opt %*%(t(z)%*%res)
+
+Q <- N*Q
+
+dfchisquared = p-k
+
+qchisq(p=.05, df=dfchisquared, lower.tail=FALSE)
 
 
 out_pvals_BGMM_sys = cbind(coefs,stdvs,tstats,pvals)

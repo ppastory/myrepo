@@ -235,19 +235,15 @@ GMM_own = function(y,x,z,w)
     
     output <- list("estimation" = out, "residuals" = res, "param" = k)
     
-    #Compute Hansen diagnostic test
+    #Compute Sargan diagnostic test
     
-    #if (r>k) {
-      
-      #J1 = t(t(z)%*%res)%*%solve(t(z)%*%sigma2omega%*%z)%*%(t(z)%*%res)
-      
-      #compute number of suspect moment conditions
-      
-      #degreesoffreedomchisquared = r-k
-      
-      #test joint validity of moment conditions using J stats
-      
-      #pval = dchisq(J1,degreesoffreedomchisquared)
+    
+    J = t(t(z)%*%res)%*%solve(var((res)^2)*t(z)%*%z)%*%(t(z)%*%res)
+    
+    dfchisquared = r-k
+    
+    pval = dchisq(J,dfchisquared)
+    
       
     }
     
