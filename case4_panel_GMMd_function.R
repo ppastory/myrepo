@@ -141,12 +141,7 @@ dGMM = function (data,full_set,stack,max_lag){
     
     var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
     
-    
-    #std_P <- sqrt(var_g[1])
-    #std_Pn <- sqrt(var_g[2])
-    #std_Y <- sqrt(var_g[3])
-    #std_Ct_1 <- sqrt(var_g[4])
-    
+  
     
     stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
     stdvs_BGMM_sys
