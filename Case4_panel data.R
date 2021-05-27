@@ -70,7 +70,7 @@ el <- max_lag-1
 #Let's loop over the states and create our big matrix
 
 n_inst <- sum(seq(1,(max_lag-1))) + ((T-2)-length(seq(1,(max_lag-1))))*(max_lag-1)
-  
+
 
 #The chunks have size 27 !!!
 #because yi27 is the last instrument of delta_ei29
@@ -89,7 +89,7 @@ for (i in (1:(T-2))) {
     for (j in 1:length(chunk)){
       Z_1[i,column+j-1] <- chunk[j]
     }
-   # Z_1[i,column] <- chunk
+    # Z_1[i,column] <- chunk
     column <- column + i
     
   } else {
