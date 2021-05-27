@@ -31,7 +31,7 @@ dGMM = function (data,full_set,stack,max_lag){
       
       #Chunk is the bunch of yi that we are going to put in the Z_i matrix
       chunk <- as.numeric(y_1[1:i])
-      
+      #print(chunk)
       exog_var <- data[i+2,16:18]
       
       endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
@@ -42,6 +42,7 @@ dGMM = function (data,full_set,stack,max_lag){
       }
       column <- column + i +3
     }
+    
     
     x_1 <- exog_var
     
@@ -58,9 +59,9 @@ dGMM = function (data,full_set,stack,max_lag){
     #that is because yi27 will instrument delta_ei29
     for (sst in seq(31, nrow(data), T)) {
       
-      
-      #The second chunk for example goes from 31 to 
-      #31 +28 
+      #print(sst)
+      #The second chunk for example goes from 30 to 
+      #30 + 27 
       y_i <- data[sst:(sst+27),10]
       
       x_i <- data[(sst+2):((sst+2)+28),16:18]
@@ -78,8 +79,9 @@ dGMM = function (data,full_set,stack,max_lag){
         
         #Chunk is the bunch of yi that we are going to put in the Z_i matrix
         chunk <- as.numeric(y_1[1:i])
-        
+        #print(chunk)
         exog_var <- x_i[i,]
+        
         
         endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
         
@@ -105,6 +107,71 @@ dGMM = function (data,full_set,stack,max_lag){
     diag(H) <- diagonal
     diag(H[-1,])<-offdiagonal
     diag(H[,-1])<-offdiagonal
+    
+    #this is a matrix with diagonal 2 and -1 on each side 
+    
+    data_reg <- na.omit(data)
+    
+    x1 <- as.matrix(na.omit(data_reg[,16:18]))
+    x2 <- as.matrix(na.omit(data_reg[,19]))
+    x<- cbind(x2,x1) #V1 like vendogemous
+    
+    data_reg <- na.omit(data)
+    y <- as.matrix(na.omit(data_reg[,15]))
+    
+    W_notinv <- t(Z) %*% H %*% Z 
+    
+    #we have the big W optimal
+    W_opt <- solve(W_notinv,tol = 1e-22)
+    
+    
+    gamma <- solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x) %*%  t(x) %*% Z %*% W_opt %*% t(Z) %*% y
+    
+    y_pred <- y
+    yhat   <- as.vector(x%*%gamma)
+    res    <- y_pred-yhat
+    
+    n  <- length(y)
+    k  <- ncol(x)
+    df <- n-k
+    
+    sigma2 <- as.vector(t(res)%*%res)/df
+    
+    sigma2 <- sigma2/2
+    
+    var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
+    
+    
+    #std_P <- sqrt(var_g[1])
+    #std_Pn <- sqrt(var_g[2])
+    #std_Y <- sqrt(var_g[3])
+    #std_Ct_1 <- sqrt(var_g[4])
+    
+    
+    stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
+    stdvs_BGMM_sys
+    
+    tstats_BGMM_sys <- gamma/stdvs_BGMM_sys
+    tstats_BGMM_sys <- c(tstats_BGMM_sys)
+    
+    n  <- length(y)
+    k  <- ncol(x)
+    df <- n-k
+    
+    pvals_GGMM_sys   <- 2*(1-pt(abs(tstats_BGMM_sys),df))
+    
+    
+    #save output
+    names(gamma) <- colnames(x)
+    names(tstats_BGMM_sys) <- colnames(x)
+    
+    #creating the table
+    coefs  <- round(gamma,3)
+    stdvs  <- round(stdvs_BGMM_sys,3)
+    tstats <- round(tstats_BGMM_sys,3)
+    pvals  <- round(pvals_GGMM_sys,3)
+    
+    
     
     if(stack == 1){
       
@@ -270,11 +337,13 @@ dGMM = function (data,full_set,stack,max_lag){
       tstats <- round(tstats_BGMM_sys,3)
       pvals  <- round(pvals_GGMM_sys,3)
       
-      
-      
+    
+    }
+  
     
     return(out_pvals_BGMM_sys = cbind(coefs,stdvs,tstats,pvals))
-    }
+    
+    
     
   } else {
     
