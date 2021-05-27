@@ -9,6 +9,8 @@ FE = function (data,TFE)
   
   x <- as.matrix(data[,11:14])
   
+  T <- sort(unique(data$year))
+  N <- sort(unique(data$state))
   
   idx <- sort(unique(data$state))
   state_i <- matrix(0, nrow = nrow(data), ncol = length(idx))
@@ -58,6 +60,10 @@ FE = function (data,TFE)
   
   yhat   <- as.vector(x%*%coefs)
   res    <- y-yhat
+  
+  n  <- length(y)
+  k  <- ncol(x)
+  df <- (N*(T-1))-k
   
   sigma2 <- as.vector(t(res)%*%res)/df
   
