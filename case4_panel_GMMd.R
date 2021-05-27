@@ -94,7 +94,7 @@ output
 
 ##Max lag matrix
 #put min max lag 2 because the minimum lag is 2
-output <- dGMM(data,0,0,5)
+output <- dGMM(data,0,0,10)
 output
 
 #lag 1 has a problem 
@@ -226,6 +226,9 @@ y_pred <- y
 yhat   <- as.vector(x%*%gamma)
 res    <- y_pred-yhat
 
+n  <- length(y)
+k  <- ncol(x)
+df <- n-k
 
 sigma2 <- as.vector(t(res)%*%res)/df
 
@@ -273,7 +276,7 @@ out_pvals_BGMM_sys = cbind(coefs,stdvs,tstats,pvals)
 
 
 #let's say that I want max 5 lags
-max_lag <- 9
+max_lag <- 10
 
 #el is the number of maximum instruments per period
 el <- max_lag-1
@@ -433,12 +436,6 @@ res    <- y_pred-yhat
 sigma2 <- as.vector(t(res)%*%res)/2
 
 var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
-
-
-#std_P <- sqrt(var_g[1])
-#std_Pn <- sqrt(var_g[2])
-#std_Y <- sqrt(var_g[3])
-#std_Ct_1 <- sqrt(var_g[4])
 
 
 stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
