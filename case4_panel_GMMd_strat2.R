@@ -161,19 +161,19 @@ H <- matrix(0,n_inst_var,n_inst_var)
 diag(H) <- diagonal
 diag(H[-1,])<-offdiagonal
 diag(H[,-1])<-offdiagonal
-H
+
 #this is a matrix with diagonal 2 and -1 on each side 
 
 data_reg <- na.omit(data)
 
 x1 <- as.matrix(na.omit(data_reg[,16:18]))
 x2 <- as.matrix(na.omit(data_reg[,19]))
-x<- cbind(x2,x1) #V1 like vendogemous
+x<- cbind(x1,x2) #V1 like vendogemous
 
 data_reg <- na.omit(data)
 y <- as.matrix(na.omit(data_reg[,15]))
 
-big_Z <- as.matrix(cbind(Z,x1))
+big_Z <- as.matrix(cbind(x1,Z))
 
 Z <- big_Z
 
@@ -190,15 +190,17 @@ y_pred <- y
 yhat   <- as.vector(x%*%gamma)
 res    <- y_pred-yhat
 
-sigma2 <- as.vector(t(res)%*%res)/2
+n  <- length(y)
+k  <- ncol(x)
+df <- n-k
+
+sigma2 <- as.vector(t(res)%*%res)/df
+
+sigma2 <- sigma2/2
+
 
 var_gamma <- sigma2* solve(t(x) %*% Z %*% W_opt %*% t(Z) %*% x)
 
-
-#std_P <- sqrt(var_g[1])
-#std_Pn <- sqrt(var_g[2])
-#std_Y <- sqrt(var_g[3])
-#std_Ct_1 <- sqrt(var_g[4])
 
 
 stdvs_BGMM_sys  <-  sqrt(diag(var_gamma))
