@@ -105,7 +105,9 @@ for (i in (1:(T-2))) {
   
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
-  #print(chunk)
+
+  chunk <- rev(chunk)
+  
   column <- column + i -1
   
   for (j in (1:length(chunk))) {
@@ -136,6 +138,7 @@ for (sst in seq(31, nrow(data), T)) {
   for (i in (1:(T-2))) {
     #print(i)
     chunk <- as.numeric(y_i[1:i])
+    chunk <- rev(chunk)
     column <- column + i -1
     
     for (j in (1:length(chunk))) {
@@ -148,6 +151,22 @@ for (sst in seq(31, nrow(data), T)) {
   Z <- rbind(Z,Z_i)
   
 }
+
+
+#time to stack the matrix !
+
+Z[Z == 0] <- NA
+
+Z <- t(apply(Z,1,function(x){
+  c(x[!is.na(x)],x[is.na(x)])}))
+
+
+Z <- Z[,colSums(is.na(Z))<nrow(Z)]
+
+
+Z[is.na(Z)] <- 0
+
+
 
 
 
