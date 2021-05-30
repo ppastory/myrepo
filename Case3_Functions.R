@@ -22,44 +22,9 @@ GMM_own = function(y,x,z,w)
 #count the moment conditions. Make sure that you have enough moment conditions
 #to compute betahat
  
-#weighting matrix only for overidentified
-  if (w==-1) {
-  
-    betahat = solve(t(x)%*%x)%*%t(x)%*%y
+
+  if (w==0) {
     
-    reshat = y - x%*%betahat
-    
-    sigmahat2 = t(reshat)%*%reshat%*%(n-K)
-    
-    xxi = solve(t(x)%*%x%*%solve(t(x)%*%x)%*%t(x)%*%x)
-    
-    covarbeta = sigmahat2 * xxi
-  
-    stderror < - sqrt(diag(covarbeta))
-    
-    tstats <- betahat/stderror
-    
-    pvals <- 2*(1-pt(abs(tstats),df)) 
-    
-    #Note test this again with t.test function in R. I do not understand the notation.
-    
-    ## Save output
-    names(betahat) <- colnames(x)
-    
-    betahat  <- round(betahat,3)
-    stderror  <- round(stderror,3)
-    tstats <- round(tstats,3)
-    pvals  <- round(pvals,3)
-    
-    out = rbind(betahat,stderror,tstats,pvals)
-    out = t(out)
-    
-    output <- list("estimation" = out, "residuals" = res, "param" = k)
-    
-    return(output)
-  
-    }
-    else if (w==0) {
     
     #Note: build a check such that x and z have the same dimensions
     #assume exactly identified model so X and K matrix have the same dimensions
@@ -130,7 +95,7 @@ GMM_own = function(y,x,z,w)
   
   #compute GMM standard errors with 'White' weighting matrix
   
-  res = y - x%*%betahativ
+  res = y - as.vector(x%*%betahativ)
   
   sigmahat2 = as.vector((t(res)%*%res))/(n-k)
   
@@ -155,9 +120,21 @@ GMM_own = function(y,x,z,w)
   out = rbind(betahativ,stderror,tstats,pvals)
   out = t(out)
   
-  output <- list("estimation" = out, "residuals" = res, "param" = k)
+  #Compute Sargan diagnostic test
+  m <- t(z)%*%z
   
-  return(output)  
+  w <- var(res) * m
+  
+  J = t(t(z)%*%res)%*%solve(w)%*%(t(z)%*%res)
+  
+  dfchisquared = r-k
+  
+  pvalj = dchisq(J,dfchisquared)
+  
+  output <- list("estimation" = out, "residuals" = res, "sargan test" = pvalj)
+  
+  return(output)
+  
   }
   else if (w==2) {
   
@@ -175,7 +152,8 @@ GMM_own = function(y,x,z,w)
     res = y - x%*%betahativ
     
     res2 = res*res
-    
+
+        
     n=length(z[,1])
     
     #Set up the Newey-West estimator. Define Newey-West lag
@@ -208,7 +186,7 @@ GMM_own = function(y,x,z,w)
     
     #compute GMM standard errors with Newey-West weighting matrix
     
-    res = y - x%*%betahativ
+    res = y - as.vector(x%*%betahativ)
     
     sigmahat2 = as.vector((t(res)%*%res))/(n-k)
     
@@ -233,18 +211,22 @@ GMM_own = function(y,x,z,w)
     out = rbind(betahativ,stderror,tstats,pvals)
     out = t(out)
     
-    output <- list("estimation" = out, "residuals" = res, "param" = k)
+    
     
     #Compute Sargan diagnostic test
+    m <- t(z)%*%z
     
+    w <- var(res) * m
     
-    J = t(t(z)%*%res)%*%solve(var((res)^2)*t(z)%*%z)%*%(t(z)%*%res)
+    J = t(t(z)%*%res)%*%solve(w)%*%(t(z)%*%res)
     
     dfchisquared = r-k
     
-    pval = dchisq(J,dfchisquared)
+    pvalj = dchisq(J,dfchisquared)
     
-      
+    output <- list("estimation" = out, "residuals" = res, "sargan test" = pvalj)
+    return(output)
+    
     }
     
     
