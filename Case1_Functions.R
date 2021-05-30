@@ -19,15 +19,14 @@ OLS_own = function (y,x,w)
   
   yhat   <- as.vector(x%*%coefs)
   res    <- y-yhat
-  #sigma2 <- as.vector(t(res)%*%res/df)
+
   sigma2 <- as.vector(t(res)%*%res)/df
   
-  #case where we only want to do 
+  #case where we only want to do the normal OLS
   
   if (w == 0){
     
-    #stdvs  <- sqrt(sigma2)*sqrt(diag(xxi))
-    
+
     var <- sigma2*xxi
     stdvs <- sqrt(diag(var))
     
@@ -55,10 +54,13 @@ OLS_own = function (y,x,w)
     #the non-diagnonal elemets of res2 need to have 0
     #I take away the diagonals
     diagonal <- diag(res2) 
+    
     #I create a matrix of 0 of diam
     res2 <- matrix(0,nrow(res2), ncol(res2)) 
+    
     #I put back the diagonal element in the diagnonals
     diag(res2) <- diagonal
+    
     #res2 is sigma2 omega in the formulas
     cov_W      <- xxi %*% t(x) %*% res2 %*% x %*% xxi
     cov_W
@@ -68,6 +70,7 @@ OLS_own = function (y,x,w)
     tstats_w
     pvals_w    <- 2*(1-pt(abs(tstats_w),df))
     pvals_w
+    
     #save output
     names(coefs) <- colnames(x)
     
@@ -101,7 +104,6 @@ OLS_own = function (y,x,w)
     
     yhat   <- as.vector(x%*%coefs)
     res    <- y-yhat
-    #sigma2 <- as.vector(t(res)%*%res) new case 1 function
     sigma2 <- as.vector(t(res)%*%res)/df
   
     
@@ -125,11 +127,7 @@ OLS_own = function (y,x,w)
     names(coefs_GLS) <- colnames(x)
     names(tstats_GLS) <- colnames(x)
     
-    #creating the table
-    #coefs  <- round(coefs_GLS,3)
-    #stdvs  <- round(stdvs_GLS,3)
-    #tstats <- round(tstats_GLS,3)
-    #pvals  <- round(pvals_GLS,3)
+   
     
     #creating the table
     coefs  <- coefs_GLS

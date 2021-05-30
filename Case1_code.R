@@ -12,7 +12,6 @@ rm(list = ls())   # Clear workspace
 
 #let's check what is the current directory
 getwd()
-#it's fiiine !
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
@@ -42,27 +41,30 @@ source("Case1_Functions.R")
 # Read from file
 data    = read.table("Data_Baltagi.csv", header = TRUE,sep = ";")
 
+#rename column
 colnames(data)[1] <- c('state')
 
+#function to take the lag
 lg <- function(x)c(NA, x[1:(length(x)-1)])
 
+#take the lag
 data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
+#take out the na 
 data  <- na.omit(data)
 
-#We create the matrix D of dummies for each variable
+#Create the data set static
 
 y_S <- as.matrix(data[,10])
 
 x_S <- as.matrix(cbind(Cnst=1, data[,11:14]))
 
-#ok now we've got all the data we need!
 
 ####################################################################
 ###                Run OLS on static model                       ###
 ####################################################################
 
-#My OLS function returns 2 things in a list
+#My OLS function returns the estimation, the residuals and the parameters
 
 OLS_static = OLS_own(y_S,x_S,0)
 
@@ -81,7 +83,7 @@ res <- OLS_static$residuals
 
 ### I compute Omega outside of the function
 res2       <- res%*%t(res)
-#the non-diagnonal elemets of res2 need to have 0
+#the non-diagonal elements of res2 need to have 0
 #I take away the diagonals
 diagonal <- diag(res2) 
 #I create a matrix of 0 of diag
@@ -90,8 +92,6 @@ P <- matrix(0,nrow(res2), ncol(res2))
 diag(P) <- sqrt(diagonal)
 
 omega_1bis <- t(P) %*% P
-
-#omega_minus1 <- solve(omega_1)
 
 GLS_static <- GLS_own(y_S,x_S,omega_1bis)
 
@@ -102,7 +102,7 @@ GLS_static <- GLS_own(y_S,x_S,omega_1bis)
 res <- OLS_static$residuals
 k <- OLS_static$param
 
-#We have 30 error terms per states
+#We have 29 error terms per states
 t <- 29
 
 #There is one different sigma per state (46 states)
@@ -113,18 +113,18 @@ sigma2_i <- seq(1:46)
 for (i in 1:(length(res)/t)){
   sigma2_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
 }
-#Maybe K is 46 but not sure
+
 
 #Now we create the diagonal of sigma_hat
-
 sigma2_est<-rep(sigma2_i,each=t)
 
 #now we create the matrix and put sigma_hat as the diagonal of that matrix
-
 omega_hat <- matrix(0,length(res), length(res)) 
+
 #I put back the diagonal element in the diagnonals
 diag(omega_hat) <- sigma2_est
 
+#run GLS
 GLS_static = GLS_own (y_S,x_S,omega_hat)
 
 
@@ -141,7 +141,7 @@ data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
 data  <- na.omit(data)
 
-#We create the matrix D of dummies for each variable
+#extract the data we need
 
 y <- as.matrix(data[,10])
 
@@ -149,7 +149,7 @@ x <- as.matrix(data[,11:14])
 
 ##First let's first difference our data!
 
-data <- transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
+data <-   transform(data, dlnC_it = ave(`ln.C_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnP_it = ave(`ln.P_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnPn_it = ave(`ln.Pn_it`, state, FUN = function(x) c(NA, diff(x))))
 data <-   transform(data, dlnY_it = ave(`ln.Y_it`, state, FUN = function(x) c(NA, diff(x))))
@@ -162,7 +162,7 @@ data<-na.omit(data)
 
 N <-   length(unique(data$state))
 
-#we loose an obs with lag and another one with difference
+#we loose an obs with lag and another one with difference pre state
 
 y_fd <- as.matrix(data[,15])
 x_fd <- as.matrix(cbind(Cnst=1,data[,16:19]))
@@ -174,15 +174,14 @@ OLS_dynamic = OLS_own(y_fd,x_fd,0)
 ###     Run EGLS on dynamic model in first difference           ###
 ##################################################################
 
-
-
 OLS_dynamic = OLS_own(y_fd,x_fd,0)
-
+#extract errors
 res <- OLS_dynamic$residuals
 
+#extract parameters
 k <- OLS_dynamic$param
 
-#We have 29 error terms per states because we do first difference
+#We have 29 error terms per states because we do first difference, there are 28
 t <- 28
 
 #There is one different sigma per state (46 states)
@@ -193,7 +192,7 @@ sigma_i <- seq(1:46)
 for (i in 1:(length(res)/t)){
   sigma_i[i] <- (t(res[(1+(i-1)*t):(i*t)])%*%(res[(1+(i-1)*t):(i*t)]))/(t-k) 
 }
-#Maybe K is 46 but not sure
+
 
 #Now we create the diagonal of sigma_hat
 
