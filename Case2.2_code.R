@@ -11,7 +11,7 @@ rm(list = ls())   # Clear workspace
 
 #let's check what is the current directory
 getwd()
-#it's fiiine !
+
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
@@ -50,6 +50,7 @@ repl <- 10000 #less number of replication to work on the code
 
 ############################################
 ######### Initialise Matrix ################
+############################################
 
 beta_0_mat <- matrix(0,4,5)
 colnames(beta_0_mat) <- c("population","estimated beta","std analytical","std numerical","std estimated")
@@ -88,7 +89,7 @@ beta <- as.matrix(rbind(b_0,b_1))
 
 
 #let's get some errors
-#sigma2 is 1
+
 sigma2 <- 1
 alpha <- 4
 
@@ -101,8 +102,6 @@ diag(sigma_omega) <- diagonal
 
 #create the vector of errors
 e <- rnorm(T,0,sd = sqrt(diagonal))
-#e <- rnorm(T,0,diagonal)
-
 
 #now I can have my y !
 Y <- X%*%beta + e
@@ -127,7 +126,7 @@ for (j in 1:length(beta1_test)) {
     #stochastic X: X = rnorm(T,0,sigma2)
     #let's get some errors, we define sigma 2 =1 earlier
     e <- rnorm(T,0,sd = sqrt(diagonal))
-    #e <- rnorm(T,0,diagonal)
+    
     #now I can have my y !
     Y <- X%*%beta + e
     
@@ -139,7 +138,7 @@ for (j in 1:length(beta1_test)) {
     
     
     
-    stdvs_0[i] <- OLS_out$estimation[1,2] #this is se(B^MC) sl 35
+    stdvs_0[i] <- OLS_out$estimation[1,2] 
     stdvs_1[i] <- OLS_out$estimation[2,2]
     
     ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1[i] 
@@ -161,7 +160,7 @@ var_1_num <- var(beta_1_OLS)
 stdvs_0_num <- sqrt(var_0_num)
 stdvs_1_num <- sqrt(var_1_num)
 
-#Analytical standard errors (asymptotic properties: consistent vs bias?)
+#Analytical standard errors 
 sigma2 <- 1
 alpha <- 4
 
@@ -227,7 +226,7 @@ size_beta1 <- mean(rej_matrix[,1])
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
 power_beta1 <- colMeans(rej_matrix[,2:5])
-#power_beta1
+
 
 #Store the result for OLS
 #table with size and power
@@ -242,10 +241,7 @@ beta_1_mat[1,] <-table_beta1
 
 #here OLS standard errors will be biased and inconsistent
 
-#OLS_out <- OLS_own(Y,X,1) 
-#
-#
-#beta_0_OLSW[i] <- OLS_out[1,1]
+
 
 
 

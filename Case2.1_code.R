@@ -11,7 +11,6 @@ rm(list = ls())   # Clear workspace
 
 #let's check what is the current directory
 getwd()
-#it's fiiine !
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
@@ -48,7 +47,7 @@ sz <- c(25,50,100,500,2500)
 ####Let's loop over different sample size ######
 ################################################
 
-#there is one table for beta0
+#there is one table for beta0 and beta1
 
 table_final_beta0 <- matrix(0,length(sz),8)
  
@@ -67,15 +66,10 @@ iter <- 0
 for (T in sz){
   iter <- iter + 1
   
-#repl number of replication
-repl <- 10000 #small replication to check
+#repl number of replications
+repl <- 10000 
 #df is the number of degrees of freedom
 df <- 1
-
-#initialising the vector
-X_bar <- rep(0,repl)
-X_var  <- rep(0,repl)
-y_bar <- rep(0,repl)
 
 #Coefficients estimates
 b_0 <- 10
@@ -92,7 +86,7 @@ beta <- as.matrix(rbind(b_0,b_1))
 #Error terms are normally distributed
 e <- rnorm(T,0,sigma2)
 
-#now I can have my y !
+#generate y
 Y <- X%*%beta + e
 
 #I am initialising the vectors in which beta and other stuff will arrive
@@ -180,9 +174,7 @@ stdvs_0_num <- sqrt(var_0_num)
 stdvs_1_num <- sqrt(var_1_num)
 
 
-
-
-#let's see what are the true standard standars
+#let's see what are the true standard standards
 table_std <- rbind(cbind(stdvs_0_ana,stdvs_0_num,stdvs_0_est),cbind(stdvs_1_ana,stdvs_1_num,stdvs_1_est))
 colnames(table_std) <- c("analytical","numerical","estimated")
 table_std
@@ -192,13 +184,11 @@ table_var <- rbind(cbind(var_0_ana,var_0_num,var_0_est),cbind(var_1_ana,var_1_nu
 colnames(table_var) <- c("analytical","numerical","estimated")
 table_var
 
-
-#let's do a little table that compares the MC with the population
+#let's compare the MC with the population
 table_beta <- cbind(b_0,beta_0_est,b_1,beta_1_est)
 
 colnames(table_beta) <- c("Beta_0_pop","Beta_0_MC","Beta_1_pop","Beta_1_MC")
 table_beta <- cbind(T,table_beta)
-
 
 ###
 #C Compute size and power
@@ -208,8 +198,7 @@ table_beta <- cbind(T,table_beta)
 colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
 
 #let's do a matrix of critical values, alpha is 5%
-#the t statistics follows a student t with 2 degrees of freedom 
-
+#the t statistics follows a student t with 2 degrees of freedom
 CV_beta1 <- qt(p=.05/2, df=T-2, lower.tail=FALSE)
 
 rej_function <- function(ttest,cv){
@@ -228,11 +217,9 @@ for (j in 1:5){
 }
 #this is the size, the mean of column 1 for which beta = 1
 size_beta1 <- mean(rej_matrix[,1])
-#size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
 power_beta1 <- colMeans(rej_matrix[,2:5])
-#power_beta1
 
 #this is the table in which you have all beta_0
 table_final_beta0[iter,] <- cbind(T,b_0,beta_0_est,stdvs_0_ana,stdvs_0_num,stdvs_0_est,var_0_ana,var_0_est)
