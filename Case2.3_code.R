@@ -11,7 +11,6 @@ rm(list = ls())   # Clear workspace
 
 #let's check what is the current directory
 getwd()
-#it's fiiine !
 
 #We don't have to sent the current directory because it is our directory myrepo
 #C:/Users/ppastory/Documents/programming/myrepo
@@ -86,7 +85,7 @@ diagonal <- xsim^alpha
 e <- rnorm(T,0,sd = sqrt(diagonal))
 
 
-#now I can have my y !
+#generate Y
 Y <- X%*%beta + e
 
 #we need the estimated residuals
@@ -94,7 +93,7 @@ OLS_out <- OLS_own(Y,X,0)
 res <- OLS_out$residuals
 
   
-#bootstrap replication
+#bootstrap replications
 brepl <- 250
 
 #I am initialising the vectors in which beta and other stuff will arrive -Pairwise
@@ -152,8 +151,6 @@ for (j in 1:length(beta1_test)) {
     
     X_b <- X
       
-    #as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
-    
     #now I can have my y !
     Y_b <- X%*%beta + errors_b
     
@@ -161,7 +158,6 @@ for (j in 1:length(beta1_test)) {
     
     beta_0_0LSbw[b] <- OLS_out$estimation[1,1]
     beta_1_OLSbw[b] <- OLS_out$estimation[2,1]
-    
     
   }
   
@@ -208,7 +204,7 @@ table_std_num
 
 
 ################################################
-####OLS Bootstrap only using many MC draw  ######
+####OLS Bootstrap only using many MC draw  #####
 ################################################
 
 beta_0_OLS <- rep(0,MCrepl)
@@ -248,8 +244,6 @@ for (j in 1:length(beta1_test)) {
     
     data <- cbind(Y,X)
     
-    print(i)
-    
       for (b in 1:brepl) {
         
         #1 pair bootstrap 
@@ -280,8 +274,6 @@ for (j in 1:length(beta1_test)) {
         
         X_b <- X
         
-        #as.matrix(cbind(Cnst=1,sample(X[,2], replace=TRUE, size=200)))
-        
         #now I can have my y !
         Y_b <- X_b%*%beta + errors_b
         
@@ -299,8 +291,7 @@ for (j in 1:length(beta1_test)) {
     beta_0_OLS[i] <- OLS_out$estimation[1,1]
     beta_1_OLS[i] <- OLS_out$estimation[2,1]
     
-    #the mean of this standard-errors from pair-sample will be the estimated standard errors
-    #This needs to be done manually because of sl 37
+    #estimated standard errors
     #the function takes into account the degree correction which inflates the variance
     #-> it is not necessary to do it manually
     stdvs_0_OLS[i] <- OLS_out$estimation[1,2]
@@ -322,10 +313,8 @@ for (j in 1:length(beta1_test)) {
     beta_0_barp[i] <- mean(beta_0_0LSbp)
     beta_1_barp[i] <- mean(beta_1_OLSbp)
     
-    #the mean of this standard-errors from pair-sample will be the estimated standard errors
-    #This needs to be done manually because of sl 37
-    #the function takes into account the degree correction which inflates the variance
-    #-> it is not necessary to do it manually
+ 
+   #For every Monte-Carlo I get a pair estimated stdvs
     stdvs_0bp[i] <- stdvs_0_nump
     stdvs_1bp[i] <- stdvs_1_nump
     #Compute the t test with these standard errors
@@ -352,21 +341,6 @@ for (j in 1:length(beta1_test)) {
     ttest_matrixbw[i,j] <- ( beta_1_OLS[i] - beta1_test[j])/stdvs_1bw[i] 
     
     
-    #I need the MC estimated std errors
-    OLS_out <- OLS_own(Y,X,0)
-    
-    beta_0_OLS[i] <- OLS_out$estimation[1,1]
-    beta_1_OLS[i] <- OLS_out$estimation[2,1]
-    
-    #the mean of this standard-errors from pair-sample will be the estimated standard errors
-    #This needs to be done manually because of sl 37
-    #the function takes into account the degree correction which inflates the variance
-    #-> it is not necessary to do it manually
-    stdvs_0_OLS[i] <- OLS_out$estimation[1,2]
-    stdvs_1_OLS[i] <- OLS_out$estimation[2,2]
-    
-    
-    ttest_matrix[i,j] <- (beta_1_OLS[i] - beta1_test[j])/stdvs_1_OLS[i] 
     
     }   
 }
@@ -379,6 +353,8 @@ colnames(ttest_matrixbw) <- c(1,0.95,0.90,0.75,0.5)
 
 
 #We want to check that the estimated standard error is unbiased
+
+####
 #A. Estimated standard error#
 ####
 
@@ -423,7 +399,7 @@ stdvs_0_ana_OLSW <- OLS_std[1,2]
 stdvs_1_ana_OLSW <- OLS_std[2,2]
 
 ###
-#B.2 Numerical Beta (MS standard errors)
+#B.2 Numerical Beta (MC standard errors)
 ###
 
 var_0_num <- var(beta_0_OLS)

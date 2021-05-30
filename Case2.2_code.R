@@ -239,11 +239,6 @@ beta_0_mat[1,] <- table_beta0
 #table beta1
 beta_1_mat[1,] <-table_beta1
 
-#here OLS standard errors will be biased and inconsistent
-
-
-
-
 
 ################################################
 ####Let's start with OLS White correction ######
@@ -296,7 +291,6 @@ for (j in 1:length(beta1_test)) {
     
     ttest_matrix[i,j] <- (beta_1_OLSW[i] - beta1_test[j])/stdvs_1[i] 
   }
-  print(mean(stdvs_0)) 
 }
 
 colnames(ttest_matrix) <- c(1,0.95,0.90,0.75,0.5)
@@ -313,7 +307,7 @@ var_1_num <- var(beta_1_OLSW)
 stdvs_0_num <- sqrt(var_0_num)
 stdvs_1_num <- sqrt(var_1_num)
 
-#Analytical Standard errors #careful here I don't assum sigma2 =1 !!
+#Analytical Standard errors #careful here I don't assume sigma2 =1 !!
 
 OLS_std <- OLS_own(Y,X,1)
 stdvs_0_ana <- OLS_std[1,2]
@@ -419,18 +413,7 @@ for (j in 1:length(beta1_test)) {
     #e <- rnorm(T,0,diagonal)
     #now I can have my y !
     Y <- X%*%beta + e
-    #
-    #sigma2 <- 1
-    #alpha <- 4
-    #
-    #diagonal <- xsim^alpha
-    ##sigma_omega is the asymptotic variance of the OLS estimator
-    #P <- matrix(0,T,T) 
-    ##I put back the diagonal element in the diagonal  
-    #
-    #diag(P) <- 1/sqrt(diagonal)
-    #
-    #sigma_omega <- t(P) %*% P
+    
     
     
     sigma2 <- 1
@@ -439,7 +422,7 @@ for (j in 1:length(beta1_test)) {
     diagonal <- xsim^alpha
     #sigma_omega is the asymptotic variance of the OLS estimator
     sigma_omega <- matrix(0,T,T) 
-    #I put back the diagonal element in the diagnonal  
+    #I put back the diagonal element in the diagonal  
     diag(sigma_omega) <- 1/diagonal
     
     
@@ -571,7 +554,6 @@ ttest_matrix <- matrix(0,repl, length(beta1_test))
 for (j in 1:length(beta1_test)) {
   
   for (i in 1:repl) {
-    print(i)
     #stochastic X: X = rnorm(T,0,sigma2)
     #let's get some errors, we define sigma 2 =1 earlier
     sigma2 <- 1
@@ -580,8 +562,7 @@ for (j in 1:length(beta1_test)) {
     diagonal <- xsim^alpha
     
     e <- rnorm(T,0,sd = sqrt(diagonal))
-    #e <- rnorm(T,0,diagonal)  
-    
+
     #now I can have my y !
     Y <- X%*%beta + e
     
@@ -643,7 +624,6 @@ stdvs_1_num <- sqrt(var_1_num)
 #Analytical standard errors  
 sigma2 <- 1
 e <- rnorm(T,0,sd = sqrt(diagonal))
-#e <- rnorm(T,0,diagonal)  
 
 #now I can have my y !
 Y <- X%*%beta + e
@@ -667,12 +647,11 @@ coefs  <- as.vector(xxi%*%xy)
 sigma2_est <- exp(coefs[1])
 zeta_est <- coefs[2]
 
-
-#for teacher sigma_hat is ok
+#create the diagonal
 diagonal_est <- (xsim^2)^zeta_est
 #sigma_omega is the asymptotic variance of the OLS estimator
 sigma_omega_est <- matrix(0,T,T) 
-#I put back the diagonal element in the diagnonal  
+#I put back the diagonal element in the diagonal  
 diag(sigma_omega_est) <- 1/diagonal_est
 
 cov_EGLS   <- sigma2_est * solve(t(X) %*% sigma_omega_est %*%X)
@@ -723,11 +702,9 @@ for (j in 1:5){
 }
 #this is the size, the mean of column 1 for which beta = 1
 size_beta1 <- mean(rej_matrix[,1])
-#size_beta1
 
 #the power is P(non reject if Beta != 1) -> 1 - P(reject)
 power_beta1 <- colMeans(rej_matrix[,2:5])
-#power_beta1
 
 
 #Store the result for OLS with White
@@ -741,15 +718,8 @@ beta_0_mat[4,] <- table_beta0
 #table beta1
 beta_1_mat[4,] <-table_beta1
 
-#so there is a problem because the true std (analytical and numerical) should
-#coincide. In all cases, we correct for small (dividing by sqrt of T) so it really
-#should be the same.
-#example of beta_1
 
-#EGLS is consistent but biased
-#as N goes big -> the variance of EGLS is smaller than OLS
 
-beta_1_mat[,3:4]
 
 
 
