@@ -49,6 +49,7 @@ colnames(data)[1] <- c('state')
 
 lg <- function(x)c(NA, x[1:(length(x)-1)])
 
+#taking the lag
 data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 
 
@@ -57,7 +58,6 @@ data$ln.C_it_1 <- unlist(tapply(data$`ln.C_it`, data$state, lg))
 y <- as.matrix(data[,10])
 
 x <- as.matrix(data[,11:14])
-
 
 
 ##First let's first difference our data!
@@ -72,14 +72,13 @@ data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(
 
 var <- data[,c(2,15:19)]
 
-#var %>% group_by(year) %>% mutate(Mean <- mean(var$dlnP_it, na.rm=TRUE))
+#demean the value for each time period (time fixed effect)
 
 var <- var %>%
   group_by(year)  %>%
   mutate(across(c("dlnC_it","dlnP_it",  "dlnPn_it","dlnY_it","dlnC_it_1"), ~ .x - mean(.x, na.rm=TRUE), .names = "tdm_{col}"))
 
 #replace value with the demean value 
-
 data[,15:19] <- var[,7:11]
 
 
@@ -97,8 +96,12 @@ output
 output <- dGMM(data,0,0,10)
 output
 
-#lag 1 has a problem 
 
+########################################################
+###### Function below for more transparency#############
+########################################################
+
+#System GMM (to see more clearly what is in our code)
 #Extract T and N
 
 N <-   length(unique(data$state))
@@ -116,8 +119,8 @@ y_1 <- data[1:(T-2),10]
 
 
 
-#The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 27 = ninst
-#but now for each chunk 1 + 2 + ... + 27, we had the 3 explanatory variables as instrument
+#The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 28 = ninst
+#but now for each chunk 1 + 2 + ... + 28, we had the 3 explanatory variables as instrument
 
 Z_1 <- matrix(0,T-2,n_inst+((T-2)*3))
 column <-2 
@@ -126,7 +129,7 @@ for (i in (1:(T-2))) {
   
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
-  #print(chunk)
+
   exog_var <- data[i+2,16:18]
   
   endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
@@ -149,19 +152,18 @@ Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
 Z <- Z_1
 
 
-#We start at the column 30 and go by chunks of 29
-#but we will only loop over the Y chunks until 27 !
-#that is because yi27 will instrument delta_ei29
+#We start at the column 31 and go by chunks of 30
+#but we will only loop over the Y chunks until 28 !
+#that is because yi28 will instrument delta_ei30
 for (sst in seq(31, nrow(data), T)) {
   
-  #print(sst)
   #The second chunk for example goes from 30 to 
   #30 + 27 
   y_i <- data[sst:(sst+27),10]
   
   x_i <- data[(sst+2):((sst+2)+28),16:18]
   
-  #The matrix of instruments has size 27 x 378 ! 
+  #The matrix of instruments has size 28 x 378 ! 
   #each time period we use more lags
   Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
   
@@ -309,7 +311,7 @@ for (i in (1:(T-2))) {
   
   #Chunk is the bunch of yi that we are going to put in the Z_i matrix
   chunk <- as.numeric(y_1[1:i])
-  #print(chunk)
+  
   exog_var <- data[i+2,16:18]
   
   if (length(chunk) < (max_lag)){
@@ -343,14 +345,14 @@ for (i in (1:(T-2))) {
 
 Z <- Z_1
 
-#We start at the column 30 and go by chunks of 29
-#but we will only loop over the Y chunks until 27 !
-#that is because yi27 will instrument delta_ei29
+#We start at the column 31 and go by chunks of 30
+#but we will only loop over the Y chunks until 28 !
+#that is because yi28 will instrument delta_ei30
+
 for (sst in seq(31, nrow(data), T)) {
   
-  #print(sst)
-  #The second chunk for example goes from 30 to 
-  #30 + 27 
+  #The second chunk for example goes from 31 to 
+  #31 + 27 
   y_i <- data[sst:(sst+27),10]
   
   x_i <- data[(sst+2):((sst+2)+28),16:18]
@@ -360,8 +362,7 @@ for (sst in seq(31, nrow(data), T)) {
   Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
   
   column <-2 
-  #Next time I will start in row 57 which is row 59 -2 
-  #and so one the keeps increase by 1 for each loop, this -2 takes the name iter
+  
   
   
   for (i in (1:(T-2))) {
@@ -369,7 +370,7 @@ for (sst in seq(31, nrow(data), T)) {
     
     #Chunk is the bunch of yi that we are going to put in the Z_i matrix
     chunk <- as.numeric(y_i[1:i])
-    #print(chunk)
+
     exog_var <- x_i[i,]
     
     
@@ -406,17 +407,16 @@ for (sst in seq(31, nrow(data), T)) {
 }
 
 
-#changing number of instrumeeents!
+#changing number of instruments!
 n_inst_var <- N*(T-2)
 
-#Imagine our big H is very big -> we try to create 
+#Creating the H matrix
 diagonal <- 2
 offdiagonal<- -1
 H <- matrix(0,n_inst_var,n_inst_var)
 diag(H) <- diagonal
 diag(H[-1,])<-offdiagonal
 diag(H[,-1])<-offdiagonal
-
 
 
 data_reg <- na.omit(data)
@@ -488,8 +488,8 @@ N <-   length(unique(data$state))
 yit <- seq(1,T-2)
 n_inst <- sum(yit)
 
-#The chunks have size 27 !!!
-#because yi27 is the last instrument of delta_ei29
+#The chunks have size 28 !!!
+#because yi28 is the last instrument of delta_ei30
 y_1 <- data[1:(T-2),10]
 
 
@@ -518,14 +518,12 @@ for (i in (1:(T-2))) {
 Z <- Z_1
 Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
 
-#We start at the column 30 and go by chunks of 29
-#but we will only loop over the Y chunks until 27 !
-#that is because yi27 will instrument delta_ei29
+#We start at the column 31 and go by chunks of 30
+#but we will only loop over the Y chunks until 28 !
+#that is because yi28 will instrument delta_ei30
 for (sst in seq(31, nrow(data), T)) {
   
-  #print(sst)
-  #The second chunk for example goes from 30 to 
-  #30 + 27 
+ 
   y_i <- data[sst:(sst+27),10]
   
   
@@ -568,7 +566,8 @@ Z[is.na(Z)] <- 0
 
 n_inst_var <- N*(T-2)
 
-#Imagine our big H is very big -> we try to create 
+#create H matrix
+
 diagonal <- 2
 offdiagonal<- -1
 H <- matrix(0,n_inst_var,n_inst_var)

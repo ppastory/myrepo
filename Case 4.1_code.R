@@ -53,6 +53,8 @@ data  <- na.omit(data)
 
 #We create the matrix D of dummies for each variable
 
+#option to get time FE
+
 FE_est = FE(data,1)
 
 FE_est$estimation

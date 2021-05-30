@@ -3,8 +3,8 @@
 ####################################################################
 
 FE = function (data,TFE) 
-###build matrix D
-{
+
+  {
   y <- as.matrix(data[,10])
   
   x <- as.matrix(data[,11:14])
@@ -67,8 +67,7 @@ FE = function (data,TFE)
   
   sigma2 <- as.vector(t(res)%*%res)/df
   
-  #case where we only want to do 
-  
+
   var <- sigma2*xxi
   stdvs <- sqrt(diag(var))
   

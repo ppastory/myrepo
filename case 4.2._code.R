@@ -40,7 +40,7 @@ source("Case4_FE estimator.R")
 source("Case4_panel_GMMd_function.R")
 
 ####################################################################
-#Case 4.2. System GMM (first style)                         ########
+#Case 4.2. GMMd                                       ########
 ####################################################################
 # Read from file
 data    = read.table("Data_Baltagi.csv", header = TRUE,sep = ";")
@@ -72,7 +72,6 @@ data <-   transform(data, dlnC_it_1 = ave(ln.C_it_1, state, FUN = function(x) c(
 
 var <- data[,c(2,15:19)]
 
-#var %>% group_by(year) %>% mutate(Mean <- mean(var$dlnP_it, na.rm=TRUE))
 
 var <- var %>%
   group_by(year)  %>%

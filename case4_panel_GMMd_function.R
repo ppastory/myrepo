@@ -1,6 +1,7 @@
 dGMM = function (data,full_set,stack,max_lag){
-  #full set = 1 -> you 
-  
+  #full_set == 1 -> fd with all the lags
+  #stack ==1 -> stack matrix
+  #max_lag number of lags
   
   
   if (full_set == 1){
@@ -16,13 +17,13 @@ dGMM = function (data,full_set,stack,max_lag){
     n_inst <- sum(yit)
     
     #The chunks have size 28 !!!
-    #because yi27 is the last instrument of delta_ei29
+    #because yi28 is the last instrument of delta_ei30
     y_1 <- data[1:(T-2),10]
     
     
     
-    #The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 27 = ninst
-    #but now for each chunk 1 + 2 + ... + 27, we had the 3 explanatory variables as instrument
+    #The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 28 = ninst
+    #but now for each chunk 1 + 2 + ... + 28, we had the 3 explanatory variables as instrument
     
     Z_1 <- matrix(0,T-2,n_inst+((T-2)*3))
     column <-2 
@@ -31,7 +32,6 @@ dGMM = function (data,full_set,stack,max_lag){
       
       #Chunk is the bunch of yi that we are going to put in the Z_i matrix
       chunk <- as.numeric(y_1[1:i])
-      #print(chunk)
       exog_var <- data[i+2,16:18]
       
       endog_exog <- append(as.numeric(y_1[1:i]),as.numeric(exog_var))
@@ -54,32 +54,28 @@ dGMM = function (data,full_set,stack,max_lag){
     Z <- Z_1
     
     
-    #We start at the column 30 and go by chunks of 29
-    #but we will only loop over the Y chunks until 27 !
-    #that is because yi27 will instrument delta_ei29
+    #We start at the column 31 and go by chunks of 30
+    #but we will only loop over the Y chunks until 28 !
+    #that is because yi28 will instrument delta_ei30
     for (sst in seq(31, nrow(data), T)) {
       
-      #print(sst)
-      #The second chunk for example goes from 30 to 
-      #30 + 27 
+      
       y_i <- data[sst:(sst+27),10]
       
       x_i <- data[(sst+2):((sst+2)+28),16:18]
       
-      #The matrix of instruments has size 27 x 378 ! 
       #each time period we use more lags
       Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
       
       column <-2 
-      #Next time I will start in row 57 which is row 59 -2 
-      #and so one the keeps increase by 1 for each loop, this -2 takes the name iter
+    
       
       
       for (i in (1:(T-2))) {
         
         #Chunk is the bunch of yi that we are going to put in the Z_i matrix
         chunk <- as.numeric(y_1[1:i])
-        #print(chunk)
+
         exog_var <- x_i[i,]
         
         
@@ -100,7 +96,7 @@ dGMM = function (data,full_set,stack,max_lag){
     
     n_inst_var <- N*(T-2)
     
-    #Imagine our big H is very big -> we try to create 
+#big H matrix
     diagonal <- 2
     offdiagonal<- -1
     H <- matrix(0,n_inst_var,n_inst_var)
@@ -116,6 +112,7 @@ dGMM = function (data,full_set,stack,max_lag){
     x2 <- as.matrix(na.omit(data_reg[,19]))
     x<- cbind(x2,x1) #V1 like vendogemous
     
+    #remove na from the data
     data_reg <- na.omit(data)
     y <- as.matrix(na.omit(data_reg[,15]))
     
@@ -184,10 +181,7 @@ dGMM = function (data,full_set,stack,max_lag){
       y_1 <- data[1:(T-2),10]
       
       
-      
-      #The number of columns of Z_1 is we would have without adding is 1 + 2 + .. + 27 = ninst
-      #but now for each chunk 1 + 2 + ... + 27, we had the 3 explanatory variables as instrument
-      
+
       Z_1 <- matrix(0,T-2,n_inst)
       column <-1 
       
@@ -209,24 +203,21 @@ dGMM = function (data,full_set,stack,max_lag){
       Z <- Z_1
       Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
       
-      #We start at the column 30 and go by chunks of 29
-      #but we will only loop over the Y chunks until 27 !
-      #that is because yi27 will instrument delta_ei29
+      #We start at the column 31 and go by chunks of 30
+      #but we will only loop over the Y chunks until 28 !
+      #that is because yi28 will instrument delta_ei30
       for (sst in seq(31, nrow(data), T)) {
         
-        #print(sst)
-        #The second chunk for example goes from 30 to 
-        #30 + 27 
+         
         y_i <- data[sst:(sst+27),10]
         
         
-        #The matrix of instruments has size 27 x 378 ! 
         #each time period we use more lags
         Z_i <- matrix(0,T-2,n_inst)
         column <-1 
         
         for (i in (1:(T-2))) {
-          #print(i)
+
           chunk <- as.numeric(y_i[1:i])
           chunk <- rev(chunk)
           column <- column + i -1
@@ -342,7 +333,7 @@ dGMM = function (data,full_set,stack,max_lag){
   } else {
     
     N <-   length(unique(data$state))
-    T <-   length(unique(data$year)) #the real T
+    T <-   length(unique(data$year)) 
     
     
     #el is the number of maximum instruments per period
@@ -358,6 +349,7 @@ dGMM = function (data,full_set,stack,max_lag){
     y_1 <- data[1:(T-2),10]
     
     #number of instruments and exog variables entering the z matrix
+    
     n_var <- n_inst + (3*(T-2))
     
     Z_1 <- matrix(0,T-2,n_var)
@@ -367,7 +359,6 @@ dGMM = function (data,full_set,stack,max_lag){
       
       #Chunk is the bunch of yi that we are going to put in the Z_i matrix
       chunk <- as.numeric(y_1[1:i])
-      #print(chunk)
       exog_var <- data[i+2,16:18]
       
       if (length(chunk) < (max_lag)){
@@ -402,25 +393,20 @@ dGMM = function (data,full_set,stack,max_lag){
     
     Z <- Z_1
     
-    #We start at the column 30 and go by chunks of 29
-    #but we will only loop over the Y chunks until 27 !
-    #that is because yi27 will instrument delta_ei29
+    #We start at the column 31 and go by chunks of 30
+    #but we will only loop over the Y chunks until 28 !
+    #that is because yi28 will instrument delta_ei30
     for (sst in seq(31, nrow(data), T)) {
       
-      #print(sst)
-      #The second chunk for example goes from 30 to 
-      #30 + 27 
+      
       y_i <- data[sst:(sst+27),10]
       
       x_i <- data[(sst+2):((sst+2)+28),16:18]
       
-      #The matrix of instruments has size 27 x 378 ! 
-      #each time period we use more lags
+
       Z_i <- matrix(0,T-2,n_inst+((T-2)*3))
       
       column <-2 
-      #Next time I will start in row 57 which is row 59 -2 
-      #and so one the keeps increase by 1 for each loop, this -2 takes the name iter
       
       
       for (i in (1:(T-2))) {
@@ -428,7 +414,6 @@ dGMM = function (data,full_set,stack,max_lag){
         
         #Chunk is the bunch of yi that we are going to put in the Z_i matrix
         chunk <- as.numeric(y_i[1:i])
-        #print(chunk)
         exog_var <- x_i[i,]
         
         
